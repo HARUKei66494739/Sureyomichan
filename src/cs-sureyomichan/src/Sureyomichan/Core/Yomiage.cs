@@ -13,15 +13,15 @@ namespace Haru.Kei.SureyomiChan.Core;
 class Yomiage(BouyomiChan bouyomi, IConfigProxy config) {
 	private readonly HashSet<string> yomiageState = new();
 
-	public void SpeakFromConfig(string name, Models.YomiageConfig config) {
-		if(!this.yomiageState.TryGetValue(name, out var _)) {
-			this.yomiageState.Add(name);
-			this.DoYomiage(config);
-		}
-	}
-
 	public void SaveImage() {
 		this.DoYomiage(config.Get().YomiageSaveTegaki);
+	}
+
+	public void DoYomiageOnce(Models.YomiageConfig config, string key) {
+		if(!this.yomiageState.TryGetValue(key, out var _)) {
+			this.yomiageState.Add(key);
+			this.DoYomiage(config);
+		}
 	}
 
 	public void DoYomiage(Models.YomiageConfig c) {
