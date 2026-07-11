@@ -26,19 +26,26 @@ class FutabaInteraction(string url, Models.__FutabaResData source, Helpers.Futab
 			return [];
 		}
 
-		var image = await api.DonwloadImage(source);
-		if(0 == image.Count()) {
-			return [];
+		var image = default(byte[]?);
+		try { 
+			image = await api.DonwloadImage(source);
 		}
+		catch(Exception e) when ((e is Exceptions.ApiHttpErrorException)
+			|| (e is Exceptions.ApiHttpConnectionException)) {}
 
-		return [new Models.AttachmentObject() {
-			IsUpdatedTegakiPng = true,
-			FileName = name,
-			ImageName = name,
-			OriginalFileBytes = image,
-			ImageFileBytes = image,
-			Hash = Models.DifferenceHash.From(name, image),
-		}];
+		if(image is null || (0 == image.Count())) {
+			return [Models.AttachmentObject.Empty(name, name)];
+		}
+		return [
+			new Models.AttachmentObject() {
+				IsUpdatedTegakiPng = true,
+				FileName = name,
+				ImageName = name,
+				OriginalFileBytes = image,
+				ImageFileBytes = image,
+				Hash = Models.DifferenceHash.From(name, image),
+			}
+		];
 	}
 }
 
@@ -77,8 +84,8 @@ file static class NijiuraChanUtil {
 	public static async Task<IEnumerable<Models.AttachmentObject>> DownloadImages(string? imagePath, string? thumbnailPath, bool? isOekaki) {
 		var fileName = imagePath ?? "";
 		var imageName = imagePath ?? "";
-		var orig = default(byte[]);
-		var image = default(byte[]);
+		var orig = default(byte[]?);
+		var image = default(byte[]?);
 
 		if(string.IsNullOrEmpty(fileName)) {
 			await Task.Yield();
@@ -89,21 +96,32 @@ file static class NijiuraChanUtil {
 		var origUrl = $"https://nijiurachan.net/{imagePath}";
 		var thumbUrl = $"https://nijiurachan.net/{thumbnailPath}";
 
-		using var response1 = await Utils.Util.Http(() => httpClient.GetAsync(origUrl));
-		orig = await response1.Content.ReadAsByteArrayAsync();
-		if(Path.GetExtension(fileName).ToLower() switch {
-			".mp4" => true,
-			".webm" => true,
-			_ => false,
-		}) {
-			using var response2 = await Utils.Util.Http(() => httpClient.GetAsync(thumbUrl));
-			image = await response2.Content.ReadAsByteArrayAsync();
-			imageName = thumbnailPath ?? "";
-		} else {
-			image = orig;
+		try {
+			using var response1 = await Utils.Util.Http(() => httpClient.GetAsync(origUrl));
+			orig = await response1.Content.ReadAsByteArrayAsync();
+			if(Path.GetExtension(fileName).ToLower() switch {
+				".mp4" => true,
+				".webm" => true,
+				_ => false,
+			}) {
+				using var response2 = await Utils.Util.Http(() => httpClient.GetAsync(thumbUrl));
+				image = await response2.Content.ReadAsByteArrayAsync();
+				imageName = thumbnailPath ?? "";
+			} else {
+				image = orig;
+			}
+
 		}
+		catch(Exception e) when((e is Exceptions.ApiHttpErrorException)
+			|| (e is Exceptions.ApiHttpConnectionException)) {}
+
+
 		if(image is null || (0 == image.Count())) {
-			return [];
+			return await Task.FromResult<IEnumerable<Models.AttachmentObject>>([
+				Models.AttachmentObject.Empty(
+					Path.GetFileName(fileName),
+					Path.GetFileName(imageName))
+			]);
 		}
 
 		return await Task.FromResult<IEnumerable<Models.AttachmentObject>>(
