@@ -42,24 +42,19 @@ class FutabaApi {
 
 	public async Task<bool> PostDelete(int resNo, string passwd) {
 		var url = this.apiUrl.GenApiDelete();
-		try {
-			var parameters = new Dictionary<string, string>() {
-				{ "responsemode", "ajax" },
-				{ $"{resNo}", "delete" },
-				{ "pwd", passwd },
-				{ "mode", "usrdel" },
-			};
-			// 画像だけ削除する場合
-			//parameters.Add("onlyimgdel", "on");
-			var content = new FormUrlEncodedContent(parameters);
+		var parameters = new Dictionary<string, string>() {
+			{ "responsemode", "ajax" },
+			{ $"{resNo}", "delete" },
+			{ "pwd", passwd },
+			{ "mode", "usrdel" },
+		};
+		// 画像だけ削除する場合
+		//parameters.Add("onlyimgdel", "on");
+		var content = new FormUrlEncodedContent(parameters);
 
-			using var response = await Utils.Util.Http(() => httpClient.PostAsync(url, content));
-			var r = await response.Content.ReadAsStringAsync();
-			return r == "ok";
-		}
-		catch (HttpRequestException ex) {
-			throw new Exceptions.ApiHttpErrorException(url, ex);
-		}
+		using var response = await Utils.Util.Http(() => httpClient.PostAsync(url, content));
+		var r = await response.Content.ReadAsStringAsync();
+		return r == "ok";
 	}
 
 	public async Task<bool> PostDel(string url, int resNo) {
