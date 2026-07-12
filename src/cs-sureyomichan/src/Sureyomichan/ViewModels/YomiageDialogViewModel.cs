@@ -233,7 +233,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				this.param.WebView);
 			{
 				var c = this.param.Config.Get();
-				yomiage.SpeakFromConfig(nameof(c.YomiageStarted), c.YomiageStarted);
+				yomiage.DoYomiageOnce(c.YomiageStarted, nameof(c.YomiageStarted));
 			}
 			api.Value.Run(
 				callBack: async (x, skip) => {
@@ -350,16 +350,16 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			bool isOld() => (current.DieTime - current.CurrentTime).TotalMilliseconds < this.param.Config.Get().YomiageOldTime;
 
 			if(current.SupportFeature.IsSupportInspectSoudane && isSoudane()) {
-				yomiage.SpeakFromConfig(nameof(config.YomiageSoudane), config.YomiageSoudane);
+				yomiage.DoYomiage(config.YomiageSoudane);
 			}
 			if(current.SupportFeature.IsSupportThreadOld && isOld()) {
-				yomiage.SpeakFromConfig(nameof(config.YomiageOld), config.YomiageOld);
+				yomiage.DoYomiageOnce(config.YomiageOld, nameof(config.YomiageOld));
 			}
 			if(current.IsMaxRes) {
-				yomiage.SpeakFromConfig(nameof(config.YomiageMaxRes), config.YomiageMaxRes);
+				yomiage.DoYomiageOnce(config.YomiageMaxRes, nameof(config.YomiageMaxRes));
 			}
 			if(current.SupportFeature.IsSupportThreadDie && !current.IsAlive) {
-				yomiage.SpeakFromConfig(nameof(config.YomiageDie), config.YomiageDie);
+				yomiage.DoYomiageOnce(config.YomiageDie, nameof(config.YomiageDie));
 			}
 		}
 	}

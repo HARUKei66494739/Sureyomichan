@@ -272,4 +272,15 @@ static class ModelsExtensions {
 			_ => "",
 		};
 	}
+
+	extension(Models.AttachmentObject _) {
+		public static Models.AttachmentObject Empty(string fileName, string imageName) => new() {
+			IsUpdatedTegakiPng = false,
+			FileName = fileName,
+			ImageName = imageName,
+			OriginalFileBytes = default,
+			ImageFileBytes = default,
+			Hash = default,
+		};
+	}
 }
