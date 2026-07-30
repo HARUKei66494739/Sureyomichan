@@ -23,7 +23,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	public record class DialogParams(
 		string UrlString,
 		Helpers.IApiUrl Url,
-		int ThreadNo,
+		Helpers.ThreadId ThreadId,
 		bool IsLatest,
 		Core.IConfigProxy Config,
 		Core.UiMessageMultiDispatcher Dispatcher,
@@ -191,10 +191,10 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		if(this.api.Value != null) {
 			this.StopYomiage();
 			if(this.param is { }) {
-				this.param.Store.Clear(this.param.ThreadNo);
+				this.param.Store.Clear(this.param.ThreadId);
 				Utils.ImageUtil.ImageStore.Remove(
 					SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId),
-					this.param.ThreadNo);
+					this.param.ThreadId);
 			}
 		}
 	}
@@ -219,7 +219,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			return false;
 		}
 
-		Utils.Logger.Instance.Info($"読み上げを開始します => {SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId)}, {this.param.ThreadNo}");
+		Utils.Logger.Instance.Info($"読み上げを開始します => {SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId)}, {this.param.ThreadId}");
 		var yomiage = new Core.Yomiage(this.param.Bouyomi, this.param.Config);
 		var prevResponse = default(Models.SureyomiChanResponse);
 		this.ThreadDieText.Value = "";
@@ -227,7 +227,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			api.Value = new Core.SureyomiChanApiLooper(
 				this.param.UrlString,
 				this.param.Url,
-				this.param.ThreadNo,
+				this.param.ThreadId,
 				this.uiMsgDispatcher,
 				this.param.Config,
 				this.param.WebView);
@@ -295,13 +295,13 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 								if(ao.ImageFileBytes is { }) {
 									Utils.ImageUtil.ImageStore.Insert(
 										SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId),
-										this.param.ThreadNo,
+										this.param.ThreadId,
 										ao.ImageName,
 										ao.ImageFileBytes);
 								}
 							}
 							disp.Add(new(it, attachments, isNg));
-							this.param.Store.Add(this.param.ThreadNo, it, isNg, attachments);
+							this.param.Store.Add(this.param.ThreadId, it, isNg, attachments);
 						}
 
 						await this.param.AttachmentWriter.UpdateThreadNo(x);
@@ -422,7 +422,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		if(this.param is { } && Utils.Util.GetSaveDirectoryPath(
 			this.param.Config.Get(),
 			this.param.Url.BoardId,
-			this.param.ThreadNo) is { } d
+			this.param.ThreadId) is { } d
 			&& System.IO.Directory.Exists(d)) {
 		
 			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(d) {

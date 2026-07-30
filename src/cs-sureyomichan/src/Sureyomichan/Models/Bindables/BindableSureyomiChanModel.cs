@@ -46,7 +46,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 
 			var ib = Utils.ImageUtil.ImageStore.Get(
 				SureyomiChanEnviroment.GetStaticString(this.Model.Interaction.BoardId),
-				this.Model.ThreadNo,
+				this.Model.ThreadId,
 				this.imageKey);
 			if(ib is null) {
 				return null;
@@ -57,6 +57,8 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 			return r;
 		}
 	}
+	public ReactiveCollection<ImageItem> SubImages { get; } = [];
+
 
 	public SureyomiChanModel Model { get; }
 
@@ -85,6 +87,22 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		bool isNg
 		) {
 
+		static string trimmingFileNameMiddle(string fileName) {
+			const int left = 6;
+			const int right = 6;
+
+			var name = Path.GetFileNameWithoutExtension(fileName);
+			var ext = Path.GetExtension(fileName);
+
+			if(name.Length <= (left + right)) {
+				return fileName;
+			}
+
+			var span = name.AsSpan();
+			return $"{span[..left]}…{span[^right..]}{ext}";
+		}
+
+
 		AttachmentObject? attachment = attachments.FirstOrDefault();
 		this.ResIndex = new ReactivePropertySlim<int>(initialValue: model.ResIndex);
 		this.No = new ReactivePropertySlim<string>(initialValue: FormatNo(model));
@@ -94,7 +112,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		this.Body = new ReactivePropertySlim<string>(initialValue: FormatBody(model));
 		this.Id = new ReactivePropertySlim<string?>(initialValue: model.Id);
 		this.ImageName = new ReactivePropertySlim<string?>(initialValue: attachment switch {
-			{ } v => v.FileName,
+			{ } v => trimmingFileNameMiddle(v.FileName),
 			_ => "",
 		});
 		this.hasImage = !isNg && attachment?.ImageFileBytes != null;
@@ -113,6 +131,10 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 			{ } v when v.ImageFileBytes is { } && !string.IsNullOrEmpty(v.ImageName) => v.ImageName,
 			_ => ""
 		};
+		foreach(var it in attachments.Skip(1)) {
+			SubImages.Add(new(model.Interaction.BoardId, model.ThreadId, it));
+		}
+
 		this.IsNg = new(initialValue: isNg);
 		this.DeleteType = new(initialValue: model.DeleteType);
 
@@ -220,5 +242,57 @@ class ImageObject : INotifyPropertyChanged {
 	public ImageObject(BitmapSource image, Timeline? animation = null) {
 		this.ImageSource = image;
 		this.AnimationSource = animation;
+	}
+}
+
+class ImageItem(
+	SureyomiChanBoardId boardId,
+	Helpers.ThreadId threadId,
+	AttachmentObject? attachment,
+	bool? hasImage = null) : INotifyPropertyChanged {
+
+	public event PropertyChangedEventHandler? PropertyChanged;
+	private readonly string imageKey = attachment switch {
+		{ } v when v.ImageFileBytes is { } && !string.IsNullOrEmpty(v.ImageName) => v.ImageName,
+		_ => ""
+	};
+	private readonly bool has = hasImage ?? attachment?.ImageFileBytes switch {
+		{ } => true,
+		_  => false,
+	};
+
+	private WeakReference<ImageObject>? image = null;
+
+	public ImageObject? Image {
+		get {
+			if(!this.has) {
+				return null;
+			}
+
+			if(this.image?.TryGetTarget(out var io) ?? false) {
+				return io;
+			}
+
+			var ib = Utils.ImageUtil.ImageStore.Get(
+				SureyomiChanEnviroment.GetStaticString(boardId),
+				threadId,
+				this.imageKey);
+			if(ib is null) {
+				return null;
+			}
+
+			var r = LoadImage(this.imageKey, ib);
+			this.image = new WeakReference<ImageObject>(r);
+			return r;
+		}
+	}
+
+	private static ImageObject LoadImage(string imageName, byte[] imageBytes) {
+		return Path.GetExtension(imageName).ToLower() switch {
+			".png" => Utils.ImageUtil.LoadPng(imageBytes),
+			".webp" => Utils.ImageUtil.LoadWebp(imageBytes),
+			".gif" => Utils.ImageUtil.LoadGif(imageBytes),
+			_ => new ImageObject(BitmapFrame.Create(new MemoryStream(imageBytes)))
+		};
 	}
 }

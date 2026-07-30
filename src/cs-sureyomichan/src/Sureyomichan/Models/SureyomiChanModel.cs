@@ -13,7 +13,21 @@ namespace Haru.Kei.SureyomiChan.Models;
 
 class SureyomiChanResponse {
 	public required SureyomiChanBoardId BoardId { get; init; }
-	public required int ThreadNo { get; init; }
+	public required Helpers.ThreadId ThreadId { get; init; }
+
+
+	// コンパイルを通すために一旦定義
+	[Obsolete]
+	public int ThreadNo {
+		get {
+			return this.ThreadId.IsInt switch {
+				true => this.ThreadId.ThreadNo,
+				_ => 0,
+			};
+		}
+	}
+
+
 	public required bool IsAlive { get; init; }
 	public required bool IsMaxRes { get; init; }
 	public required DateTime CurrentTime { get; init; }
@@ -25,7 +39,7 @@ class SureyomiChanResponse {
 }
 
 class SureyomiChanModel(
-	int threadNo,
+	Helpers.ThreadId threadId,
 	int resIndex,
 	int no,
 	DateTime postTime,
@@ -40,7 +54,7 @@ class SureyomiChanModel(
 	IEnumerable<Models.Token> token,
 	ISureyomiChanInteraction interaction) {
 
-	public int ThreadNo { get; } = threadNo;
+	public Helpers.ThreadId ThreadId { get; } = threadId;
 	public int ResIndex { get; } = resIndex;
 	public int No { get; } = no;
 	public DateTime PostTime { get; } = postTime;

@@ -317,7 +317,7 @@ class AttachmentWriter {
 		var saveRoot = Utils.Util.GetSaveDirectoryPath(
 			this.config.Get(),
 			model.Interaction.BoardId,
-			model.ThreadNo);
+			model.ThreadId);
 
 		// 存在しない場合フォルダを作る
 		if(!Directory.Exists(saveRoot)) {

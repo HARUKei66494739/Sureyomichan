@@ -12,6 +12,7 @@ using System.Net.NetworkInformation;
 using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Media;
@@ -42,13 +43,13 @@ internal class ImageUtil {
 			}
 		}
 
-		public byte[]? Get(string board, int threadNo, string imageName) {
+		public byte[]? Get(string board, Helpers.ThreadId threadId, string imageName) {
 			lock(lockObj) {
 				try {
 					using var db = new LiteDatabase(__DbFile);
 					var ic = db.GetCollection<CacheObject>(CacheTable)
 						.FindOne(x => (x.Board == board)
-							&& (x.ThreadNo == threadNo)
+							&& (x.ThreadId == threadId.ToDbString())
 							&& (x.FileName == imageName));
 					return ic?.ImageBytes;
 				}
@@ -59,7 +60,7 @@ internal class ImageUtil {
 			}
 		}
 
-		public void Insert(string board, int threadNo, string imageName, byte[] imageBytes) {
+		public void Insert(string board, Helpers.ThreadId threadId, string imageName, byte[] imageBytes) {
 			lock(lockObj) {
 				using var db = new LiteDatabase(__DbFile);
 				db.BeginTrans();
@@ -67,7 +68,7 @@ internal class ImageUtil {
 					db.GetCollection<CacheObject>(CacheTable)
 						.Insert(new CacheObject() {
 							Board = board,
-							ThreadNo = threadNo,
+							ThreadId = threadId.ToDbString(),
 							Time = DateTime.Now,
 							ImageBytes = imageBytes,
 							FileName = imageName
@@ -81,13 +82,13 @@ internal class ImageUtil {
 			}
 		}
 
-		public void Remove(string board, int threadNo) {
+		public void Remove(string board, Helpers.ThreadId threadId) {
 			lock(lockObj) {
 				using var db = new LiteDatabase(__DbFile);
 				db.BeginTrans();
 				try {
 					db.GetCollection<CacheObject>(CacheTable)
-						.DeleteMany(x => (x.Board == board) && (x.ThreadNo == threadNo));
+						.DeleteMany(x => (x.Board == board) && (x.ThreadId == threadId.ToDbString()));
 					db.Commit();
 				}
 				catch(LiteDB.LiteException e) {
@@ -422,11 +423,19 @@ internal class ImageUtil {
 
 }
 
-
 file class CacheObject {
 	public string Board { get; set; } = "";
-	public int ThreadNo { get; set; }
+	public string ThreadId { get; set; } = "";
 	public DateTime Time { get; set; }
 	public string FileName { get; set; } = "";
-	public byte[] ImageBytes { get; set; } = new byte[0];
+	public byte[] ImageBytes { get; set; } = Array.Empty<byte>();
+}
+
+file static class Extension {
+	extension(Helpers.ThreadId source) {
+		// #2219対策
+		// https://github.com/litedb-org/LiteDB/issues/2219
+		public string ToDbString() => Regex.Replace($"{source}", "[{}]", "_");
+	}
+
 }

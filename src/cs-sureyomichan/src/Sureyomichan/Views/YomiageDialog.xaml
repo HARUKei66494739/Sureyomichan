@@ -186,6 +186,7 @@
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
                                                 <TextBlock
                                                     Grid.Column="0"
@@ -244,6 +245,49 @@
                                                     Style="{StaticResource MaterialDesignBody2TextBlock}"
                                                     Text="{Binding Body.Value, Mode=OneWay}"
                                                     TextWrapping="Wrap" />
+
+                                                <ListBox
+                                                    Grid.Column="0"
+                                                    Grid.ColumnSpan="2"
+                                                    Grid.Row="2"
+                                                    Visibility="{Binding ImageVisibility.Value, Mode=OneWay}"
+                                                    ItemsSource="{Binding SubImages}"
+                                                    ScrollViewer.CanContentScroll="False"
+                                                    material:ListBoxItemAssist.ShowSelection="False">
+                                                    <ListBox.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel
+                                                                IsItemsHost="True"
+                                                                HorizontalAlignment="Left" />
+                                                        </ItemsPanelTemplate>
+                                                    </ListBox.ItemsPanel>
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border>
+                                                                <Viewbox
+                                                                    Grid.Column="0"
+                                                                    Grid.Row="1"
+                                                                    Stretch="UniformToFill"
+                                                                    MaxWidth="120"
+                                                                    MaxHeight="120"
+                                                                    Margin="0"
+                                                                    >
+                                                                    <Image
+                                                                        Source="{Binding Image.ImageSource}"
+                                                                        RenderOptions.EdgeMode="Aliased"
+                                                                        RenderOptions.BitmapScalingMode="Fant">
+                                                                        <Image.CacheMode>
+                                                                            <BitmapCache RenderAtScale="1" />
+                                                                        </Image.CacheMode>
+                                                                        <i:Interaction.Behaviors>
+                                                                            <b:ImageBehavior Source="{Binding Image, Mode=OneWay}" />
+                                                                        </i:Interaction.Behaviors>
+                                                                    </Image>
+                                                                </Viewbox>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
                                             </Grid>
                                         </Grid>
                                     </material:Card>

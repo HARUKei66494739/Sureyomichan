@@ -19,14 +19,15 @@ partial class SureyomiChanApiLooper : IDisposable {
 	private IDisposable? runSubscriber = null;
 	private bool isDisposed = false;
 
-	public SureyomiChanApiLooper(string urlString, Helpers.IApiUrl url, int threadNo, UiMessageDispatcher uiMsgDispatcher, IConfigProxy config, WebView2Proxy webView) {
+	public SureyomiChanApiLooper(string urlString, Helpers.IApiUrl url, Helpers.ThreadId threadId, UiMessageDispatcher uiMsgDispatcher, IConfigProxy config, WebView2Proxy webView) {
 		this.uiMsgDispatcher = uiMsgDispatcher;
 		this.config = config;
 
 		this.cancel = new();
-		this.worker = url switch {
-			Helpers.FutabaUrl => new FutabaApiWorker(urlString, threadNo, this.config),
-			Helpers.NijiuraChanUrl => new NijiuraChanInternalApiWorker(urlString, threadNo, this.config, webView),
+		this.worker = url.BoardId switch {
+			SureyomiChanBoardId.FutabaImg => new FutabaApiWorker(urlString, threadId, this.config),
+			SureyomiChanBoardId.NijiuraChanAimg => new NijiuraChanInternalApiWorker(urlString, threadId, this.config, webView),
+			SureyomiChanBoardId.NijiuraChan__Ts => new NijiuraChanTsApiWorker(urlString, threadId, this.config, webView),
 			_ => throw new NotSupportedException()
 		};
 		Utils.Logger.Instance.Info($"ApiLooperの作成完了 => url={url.GetType().Name}, worker={this.worker.GetType().Name}");

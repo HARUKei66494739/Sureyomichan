@@ -81,6 +81,7 @@ class MainWindowViewModel : BindableBase {
 		this.dialogService = dialogService;
 		this.FutabaUrl = Utils.Singleton.Instance.FutabaUrl;
 		this.NijiuraChanUrl = Utils.Singleton.Instance.NijiuraChanUrl;
+		this.NijiuraChanTsUrl = Utils.Singleton.Instance.NijiuraChanTsUrl;
 		this.attachmentWriter = new(config: this.config, uiDispatcher: this.uiDispatcher);
 		this.bouyomi = new(Utils.Singleton.Instance.HttpClient, this.uiDispatcher, this.config);
 
@@ -128,6 +129,7 @@ class MainWindowViewModel : BindableBase {
 	private readonly Core.TegakiSaveStore tegakiSaveStore = new();
 	private readonly Helpers.IApiUrl FutabaUrl;
 	private readonly Helpers.IApiUrl NijiuraChanUrl;
+	private readonly Helpers.IApiUrl NijiuraChanTsUrl;
 
 	public SnackbarMessageQueue SnackbarMessageQueue { get; } = new();
 	private Core.SureyomiChanNgProcesser? ng;
@@ -180,7 +182,7 @@ class MainWindowViewModel : BindableBase {
 			this.edge.Initialized += (_, _) => {
 				// CoreWebViewが初期化されたタイミングでコマンドライン解析
 				if(Utils.Util.ParseCommandLine(Environment.CommandLine) is { } p) {
-					if(this.StartYomiage(p.Board, p.ThreadNo, p.IsLatest)) {
+					if(this.StartYomiage(p.Board, p.ThreadId, p.IsLatest)) {
 						Utils.Singleton.Instance.PrismMessenger.GetEvent<PubSubEvent<Models.WindowMinimizeMessage>>()
 							.Publish(new(this.viewToken));
 					}
@@ -243,14 +245,14 @@ class MainWindowViewModel : BindableBase {
 
 	private void EnqueueErrorMessage(string message) => this.SnackbarMessageQueue.Enqueue(message);
 
-	private bool StartYomiage(SureyomiChanBoardId board, int threadId, bool latest) {
+	private bool StartYomiage(SureyomiChanBoardId board, Helpers.ThreadId threadId, bool latest) {
 		var url = board switch {
 			{ } v when v == SureyomiChanBoardId.FutabaImg => Utils.Singleton.Instance.FutabaUrl,
 			{ } v when v == SureyomiChanBoardId.NijiuraChanAimg => Utils.Singleton.Instance.NijiuraChanUrl,
 			_ => null,
 		};
 		if(url is { } api) {
-			return this.StartYomiage(url, threadId, latest);
+			return this.StartYomiage(api, threadId, latest);
 		} else {
 			return false;
 		}
@@ -260,6 +262,7 @@ class MainWindowViewModel : BindableBase {
 		Helpers.IApiUrl? apiUrl = url switch {
 			string s when this.FutabaUrl.IsValidUrl(s) => this.FutabaUrl,
 			string s when this.NijiuraChanUrl.IsValidUrl(s) => this.NijiuraChanUrl,
+			string s when this.NijiuraChanTsUrl.IsValidUrl(s) => this.NijiuraChanTsUrl,
 			_ => null
 		};
 		if(apiUrl is { } && apiUrl.ParseThreadNo(url) is { } threadId) {
@@ -270,7 +273,7 @@ class MainWindowViewModel : BindableBase {
 		}
 	}
 
-	private bool StartYomiage(Helpers.IApiUrl url, int threadId, bool latest) {
+	private bool StartYomiage(Helpers.IApiUrl url, Helpers.ThreadId threadId, bool latest) {
 		if(this.edge == null) {
 			Utils.Logger.Instance.Error($"！！整合性エラーWebViewが初期化されていません！！");
 			return false;
@@ -296,7 +299,7 @@ class MainWindowViewModel : BindableBase {
 				new ViewModels.YomiageDialogViewModel.DialogParams(
 					UrlString: urlString,
 					Url: url,
-					ThreadNo: threadId,
+					ThreadId: threadId,
 					IsLatest: latest,
 					Config: this.config,
 					Dispatcher: this.uiDispatcher,
@@ -333,7 +336,7 @@ class MainWindowViewModel : BindableBase {
 			var d = Marshal.PtrToStructure<Interop.COPYDATASTRUCT>(lParam);
 			if(d.dwData == SureyomiChanEnviroment.CopyDataTypeCommandArgs) {
 				if(Utils.Util.ParseCommandLine(d.lpData) is { } p) {
-					if(this.StartYomiage(p.Board, p.ThreadNo, p.IsLatest)) {
+					if(this.StartYomiage(p.Board, p.ThreadId, p.IsLatest)) {
 						Utils.Singleton.Instance.PrismMessenger.GetEvent<PubSubEvent<Models.WindowMinimizeMessage>>()
 							.Publish(new(this.viewToken));
 					}
