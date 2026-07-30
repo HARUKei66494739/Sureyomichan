@@ -302,7 +302,7 @@ static class ModelsExtensions {
 			no: source.BoardNo,
 			postTime: source.CreatedAtDateTime,
 			email: "",
-			body: source.Body,
+			body: RemoveUnicodePrivateChar(source.Body),
 			id: string.IsNullOrEmpty(source.DisplayId) switch {
 				true => null,
 				_ => source.DisplayId
@@ -313,6 +313,25 @@ static class ModelsExtensions {
 
 			token: Utils.Util.Tokenize(source.FormatBody()),
 			interaction: interaction);
+
+		// 仕様として入っているaimgだけ今のところ除去する
+		private static string RemoveUnicodePrivateChar(string s) {
+			var ary = s.Select((x, i) => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(x) switch {
+				System.Globalization.UnicodeCategory.PrivateUse => default(int?),
+				_ => i
+			}).ToArray();
+			if(!ary.Any(x => x == default(int?))) {
+				return s;
+			}
+
+			var r = new StringBuilder();
+			foreach(var it in ary) {
+				if(it is { } i) {
+					r.Append(s[i]);
+				}
+			}
+			return r.ToString();
+		}
 
 		private IEnumerable<Models.SureyomiChanImage> ToImages() => source.Attachment switch {
 			{ } => source.Attachment.OriginalUrl switch {
