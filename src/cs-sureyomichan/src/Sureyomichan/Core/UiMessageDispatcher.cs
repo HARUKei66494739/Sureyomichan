@@ -22,19 +22,24 @@ class UiMessageDispatcher {
 
 
 	public void DispatchBeginGetApi() => Dispatch(() => this.OnBeginApi?.Invoke());
-	public void DispatchEndGetApi(bool sucessed, Models.SureyomiChanResponse? response)
+	public void DispatchEndGetApi(bool sucessed, (Models.SureyomiChanThreadInfo Info, Models.SureyomiChanResponse Response)? apiResult)
 		=> Dispatch(() => {
 			this.OnEndApi?.Invoke(sucessed);
-			if(sucessed && response is { }) {
-				if(response.SupportFeature.IsSupportThreadOld && response.IsAlive) {
-					this.OnUpdateDieTime?.Invoke(response.CurrentTime, response.DieTime);
-				}
-				if(response.SupportFeature.IsSupportThreadOld && response.IsAlive && response.IsMaxRes) {
-					this.OnMaxRes?.Invoke();
-				}
-				if(response.SupportFeature.IsSupportThreadDie && !response.IsAlive) {
-					this.OnThreadDied?.Invoke();
-				}
+			if(!sucessed) {
+				return;
+			}
+			if(!(apiResult is { } ret)) {
+				return;
+			}
+
+			if(ret.Response.SupportFeature.IsSupportThreadOld && ret.Response.IsAlive) {
+				this.OnUpdateDieTime?.Invoke(ret.Response.CurrentTime, ret.Response.DieTime);
+			}
+			if(ret.Response.SupportFeature.IsSupportThreadOld && ret.Response.IsAlive && ret.Response.IsMaxRes) {
+				this.OnMaxRes?.Invoke();
+			}
+			if(ret.Response.SupportFeature.IsSupportThreadDie && !ret.Response.IsAlive) {
+				this.OnThreadDied?.Invoke();
 			}
 		});
 

@@ -16,6 +16,57 @@ using System.Windows.Media.Imaging;
 namespace Haru.Kei.SureyomiChan.Models.Bindables; 
 
 class BindableSureyomiChanModel : INotifyPropertyChanged {
+	public class ImageItem(
+		SureyomiChanBoardId boardId,
+		Helpers.ThreadId threadId,
+		AttachmentObject? attachment,
+		bool? hasImage = null) : INotifyPropertyChanged {
+
+		public event PropertyChangedEventHandler? PropertyChanged;
+		private readonly string imageKey = attachment switch {
+			{ } v when v.ImageFileBytes is { } && !string.IsNullOrEmpty(v.ImageName) => v.ImageName,
+			_ => ""
+		};
+		private readonly bool has = hasImage ?? attachment?.ImageFileBytes switch {
+			{ } => true,
+			_ => false,
+		};
+
+		private WeakReference<ImageObject>? image = null;
+
+		public ImageObject? Image {
+			get {
+				if(!this.has) {
+					return null;
+				}
+
+				if(this.image?.TryGetTarget(out var io) ?? false) {
+					return io;
+				}
+
+				var ib = Utils.ImageUtil.ImageStore.Get(
+					SureyomiChanEnviroment.GetStaticString(boardId),
+					threadId,
+					this.imageKey);
+				if(ib is null) {
+					return null;
+				}
+
+				var r = LoadImage(this.imageKey, ib);
+				this.image = new WeakReference<ImageObject>(r);
+				return r;
+			}
+		}
+
+		private static ImageObject LoadImage(string imageName, byte[] imageBytes) {
+			return Path.GetExtension(imageName).ToLower() switch {
+				".png" => Utils.ImageUtil.LoadPng(imageBytes),
+				".webp" => Utils.ImageUtil.LoadWebp(imageBytes),
+				".gif" => Utils.ImageUtil.LoadGif(imageBytes),
+				_ => new ImageObject(BitmapFrame.Create(new MemoryStream(imageBytes)))
+			};
+		}
+	}
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -242,57 +293,5 @@ class ImageObject : INotifyPropertyChanged {
 	public ImageObject(BitmapSource image, Timeline? animation = null) {
 		this.ImageSource = image;
 		this.AnimationSource = animation;
-	}
-}
-
-class ImageItem(
-	SureyomiChanBoardId boardId,
-	Helpers.ThreadId threadId,
-	AttachmentObject? attachment,
-	bool? hasImage = null) : INotifyPropertyChanged {
-
-	public event PropertyChangedEventHandler? PropertyChanged;
-	private readonly string imageKey = attachment switch {
-		{ } v when v.ImageFileBytes is { } && !string.IsNullOrEmpty(v.ImageName) => v.ImageName,
-		_ => ""
-	};
-	private readonly bool has = hasImage ?? attachment?.ImageFileBytes switch {
-		{ } => true,
-		_  => false,
-	};
-
-	private WeakReference<ImageObject>? image = null;
-
-	public ImageObject? Image {
-		get {
-			if(!this.has) {
-				return null;
-			}
-
-			if(this.image?.TryGetTarget(out var io) ?? false) {
-				return io;
-			}
-
-			var ib = Utils.ImageUtil.ImageStore.Get(
-				SureyomiChanEnviroment.GetStaticString(boardId),
-				threadId,
-				this.imageKey);
-			if(ib is null) {
-				return null;
-			}
-
-			var r = LoadImage(this.imageKey, ib);
-			this.image = new WeakReference<ImageObject>(r);
-			return r;
-		}
-	}
-
-	private static ImageObject LoadImage(string imageName, byte[] imageBytes) {
-		return Path.GetExtension(imageName).ToLower() switch {
-			".png" => Utils.ImageUtil.LoadPng(imageBytes),
-			".webp" => Utils.ImageUtil.LoadWebp(imageBytes),
-			".gif" => Utils.ImageUtil.LoadGif(imageBytes),
-			_ => new ImageObject(BitmapFrame.Create(new MemoryStream(imageBytes)))
-		};
 	}
 }

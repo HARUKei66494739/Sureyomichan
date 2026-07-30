@@ -8,9 +8,12 @@ namespace Haru.Kei.SureyomiChan.Core;
 
 /// <summary>tegaki_saveのtegakiグローバル変数をWebViewとやりとりするためのinterface</summary>
 public interface ITegakiSaveStore {
-	/// <summary>tegakiグローバル変数を表すjson</summary>
-	/// <returns></returns>
+	/// <summary>thread-noの板用</summary>
+	/// <returns>tegakiグローバル変数を表すjson</returns>
 	public string GetStore(int resNo);
+	/// <summary>thread-idの板用</summary>
+	/// <returns>tegakiグローバル変数を表すjson</returns>
+	public string GetStore(string resId);
 }
 
 class TegakiSaveStore : ITegakiSaveStore {
@@ -25,11 +28,14 @@ class TegakiSaveStore : ITegakiSaveStore {
 	private Dictionary<string, List<Models.TegakiSaveResData>> TegakiData { get; } = new();
 
 
-	string ITegakiSaveStore.GetStore(int resNo) {
-		return new StoreObject() {
+	string ITegakiSaveStore.GetStore(int resNo)
+		=> new StoreObject() {
 			TegakiData = ToTegakiSaveModels(new(resNo)),
 		}.ToString();
-	}
+	string ITegakiSaveStore.GetStore(string resId)
+		=> new StoreObject() {
+			TegakiData = ToTegakiSaveModels(new(resId)),
+		}.ToString();
 
 	public List<Models.TegakiSaveResData> ToTegakiSaveModels(Helpers.ThreadId resId) {
 		lock(this.lockObj) {

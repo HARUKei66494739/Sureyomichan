@@ -296,11 +296,11 @@ static class Util {
 		return r.AsReadOnly();
 	}
 
-	public static string GetSaveDirectoryPath(Models.Config config, SureyomiChanBoardId boardId, Helpers.ThreadId threadId) {
+	public static string GetSaveDirectoryPath(Models.Config config, Models.SureyomiChanThreadInfo threadInfo) {
 		var root = config.PathDwonloadValue;
 		var sb = new StringBuilder(config.SaveSubFolderName);
-		sb.Replace("$Board", $"{SureyomiChanEnviroment.GetStaticString(boardId)}");
-		sb.Replace("$Thread", $"{threadId}");
+		sb.Replace("$Board", $"{SureyomiChanEnviroment.GetStaticString(threadInfo.BoardId)}");
+		sb.Replace("$Thread", $"{threadInfo.ThreadNo}");
 		var sub = sb.ToString();
 
 		return !string.IsNullOrWhiteSpace(sub) switch {

@@ -333,17 +333,14 @@ static class ModelsExtensions {
 			return r.ToString();
 		}
 
-		private IEnumerable<Models.SureyomiChanImage> ToImages() => source.Attachment switch {
-			{ } => source.Attachment.OriginalUrl switch {
-				/*
-				string v when !string.IsNullOrEmpty(v) => [
-						new(Path.GetFileName(v), source.Attachment.Path, source.Attachment.Thumbnail),
-					],
-				*/
-				_ => []
-			},
-			_ => []
-		};
+		private IEnumerable<Models.SureyomiChanImage> ToImages()
+			=> source.Attachments
+				.Select(x => new Models.SureyomiChanImage(
+					Path.GetFileName(x.OriginalUrl),
+					x.OriginalUrl,
+					x.OriginalUrl))
+				.ToArray()
+				.AsReadOnly();
 	}
 
 	extension(Models.AttachmentObject _) {

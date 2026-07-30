@@ -19,7 +19,7 @@ class Singleton {
 
 	public Helpers.FutabaApi FutabaApi { get; }
 	public Helpers.NijiuraChanApi NijiuraChanApi { get; }
-	public Core.NijiuraChanTsApi NijiuraChanTsApi { get; }
+	public Helpers.NijiuraChanTsApi NijiuraChanTsApi { get; }
 
 	public Helpers.StartupSequence StartupSequence { get; } = new();
 	public EventAggregator PrismMessenger { get; } = new();

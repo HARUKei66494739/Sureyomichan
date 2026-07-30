@@ -50,7 +50,7 @@ class FutabaInteraction(string url, Models.__FutabaResData source, Helpers.Futab
 	}
 }
 
-class NijiuraChanInteraction(string url, Models.NijiuraChanReplyV1 source, Helpers.NijiuraChanApi? api, IConfigProxy config) : Models.ISureyomiChanInteraction {
+class NijiuraChanInteraction(Models.NijiuraChanReplyV1 source) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
 	public bool IsSupportSendDel => false;
 	public bool IsSupportDeleteRes => false;
@@ -65,7 +65,7 @@ class NijiuraChanInteraction(string url, Models.NijiuraChanReplyV1 source, Helpe
 		=> await NijiuraChanUtil.DownloadImages(source.Image, source.Thumb, null);
 }
 
-class NijiuraChanInternalInteraction(string url, Models.NijiuraChanPostInternal source, Helpers.NijiuraChanApi? api, IConfigProxy config) : Models.ISureyomiChanInteraction {
+class NijiuraChanInternalInteraction(Models.NijiuraChanPostInternal source) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
 	public bool IsSupportSendDel => false;
 	public bool IsSupportDeleteRes => false;
@@ -80,7 +80,7 @@ class NijiuraChanInternalInteraction(string url, Models.NijiuraChanPostInternal 
 		=> await NijiuraChanUtil.DownloadImages(source.Attachment?.Path, source.Attachment?.Thumbnail, source.Attachment?.IsOekaki);
 }
 
-class NijiuraChanTsInteraction(string url, Models.NijiuraChanPost source, Helpers.NijiuraChanApi? api, IConfigProxy config) : Models.ISureyomiChanInteraction {
+class NijiuraChanTsInteraction(Models.NijiuraChanPost source) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChan__Ts;
 	public bool IsSupportSendDel => false;
 	public bool IsSupportDeleteRes => false;

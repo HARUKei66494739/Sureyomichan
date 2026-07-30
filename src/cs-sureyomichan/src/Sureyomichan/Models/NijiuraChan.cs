@@ -143,6 +143,30 @@ class NijiuraChanToken : JsonObject {
 	public string Role { get; private set; } = "";
 }
 
+class NijiuraChanChunk : JsonObject {
+	// ドキュメントがないので使うものだけ定義
+
+	[JsonPropertyName("seq")]
+	[JsonInclude]
+	public int Sequence { get; private set; }
+
+	[JsonPropertyName("boardNo")]
+	[JsonInclude]
+	public int BoardNo { get; private set; }
+
+	/*
+	[JsonPropertyName("body")]
+
+	[JsonInclude]
+	public string Body { get; private set; } = "";
+
+	[JsonPropertyName("createdAt")]
+
+	[JsonInclude]
+	public string CreatedAt { get; private set; } = "";
+	*/
+}
+
 class NijiuraChanState : JsonObject {
 	[JsonPropertyName("replyCount")]
 	[JsonInclude]

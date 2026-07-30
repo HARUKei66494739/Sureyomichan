@@ -30,6 +30,21 @@ class ThreadId {
 		{ } v => v,
 		_ => throw new InvalidOperationException($"意図しないフロー{nameof(threadId)}はnull"),
 	};
+
+	public override int GetHashCode() {
+		return this.ToString().GetHashCode();
+	}
+
+	public override bool Equals(object? obj) {
+		if(object.ReferenceEquals(this, obj)) {
+			return true;
+		}
+		if(obj?.ToString() == this.ToString()) {
+			return true;
+		}
+		return false;
+	}
+
 	public override string ToString() {
 		if(this.threadNo is { }) {
 			return $"{this.threadNo}";

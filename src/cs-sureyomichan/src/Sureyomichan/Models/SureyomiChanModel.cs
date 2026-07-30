@@ -11,23 +11,20 @@ using System.Threading.Tasks;
 
 namespace Haru.Kei.SureyomiChan.Models;
 
+class SureyomiChanThreadInfo {
+	public required SureyomiChanBoardId BoardId { get; init; }
+	public required Helpers.ThreadId ThreadId { get; init; }
+	public required int ThreadNo { get; init; }
+
+	/*
+	public required DateTime PostTime { get; init; }
+	public required string Body { get; init; }
+	*/
+}
+
 class SureyomiChanResponse {
 	public required SureyomiChanBoardId BoardId { get; init; }
 	public required Helpers.ThreadId ThreadId { get; init; }
-
-
-	// コンパイルを通すために一旦定義
-	[Obsolete]
-	public int ThreadNo {
-		get {
-			return this.ThreadId.IsInt switch {
-				true => this.ThreadId.ThreadNo,
-				_ => 0,
-			};
-		}
-	}
-
-
 	public required bool IsAlive { get; init; }
 	public required bool IsMaxRes { get; init; }
 	public required DateTime CurrentTime { get; init; }
