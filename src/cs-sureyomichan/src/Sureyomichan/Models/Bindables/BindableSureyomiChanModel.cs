@@ -87,17 +87,17 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		bool isNg
 		) {
 
-		static string trimmingFileNameMiddle(string fileName) {
+		static string getViewFileName(SureyomiChanModel model, AttachmentObject obj) {
 			const int left = 6;
 			const int right = 6;
 
-			var name = Path.GetFileNameWithoutExtension(fileName);
-			var ext = Path.GetExtension(fileName);
-
-			if(name.Length <= (left + right)) {
+			var fileName = obj.FileName;
+			if(model.Interaction.BoardId != SureyomiChanBoardId.NijiuraChan__Ts) {
 				return fileName;
 			}
 
+			var name = Path.GetFileNameWithoutExtension(fileName);
+			var ext = Path.GetExtension(fileName);
 			var span = name.AsSpan();
 			return $"{span[..left]}…{span[^right..]}{ext}";
 		}
@@ -112,7 +112,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		this.Body = new ReactivePropertySlim<string>(initialValue: FormatBody(model));
 		this.Id = new ReactivePropertySlim<string?>(initialValue: model.Id);
 		this.ImageName = new ReactivePropertySlim<string?>(initialValue: attachment switch {
-			{ } v => trimmingFileNameMiddle(v.FileName),
+			{ } v => getViewFileName(model, v),
 			_ => "",
 		});
 		this.hasImage = !isNg && attachment?.ImageFileBytes != null;
