@@ -38,6 +38,7 @@ internal static partial class SureyomiChanEnviroment {
 		return target switch {
 			SureyomiChanBoardId.FutabaImg => "img",
 			SureyomiChanBoardId.NijiuraChanAimg => "aimg",
+			SureyomiChanBoardId.NijiuraChan__Ts => "ts",
 			_ => throw new Exception(),
 		};
 	}
@@ -51,6 +52,11 @@ internal static partial class SureyomiChanEnviroment {
 			},
 			SureyomiChanBoardId.NijiuraChanAimg => v switch {
 				SureyomiChanBoardItem.URiCommand => "aimg",
+				SureyomiChanBoardItem.ThreadNoFileName => "threadno.aimg.txt",
+				_ => throw new Exception(),
+			},
+			SureyomiChanBoardId.NijiuraChan__Ts => v switch {
+				SureyomiChanBoardItem.URiCommand => "ts",
 				SureyomiChanBoardItem.ThreadNoFileName => "threadno.aimg.txt",
 				_ => throw new Exception(),
 			},
@@ -78,7 +84,9 @@ enum SureyomiChanStaticItem {
 
 enum SureyomiChanBoardId {
 	FutabaImg,
-	NijiuraChanAimg
+	NijiuraChanAimg,
+	/// <summary>仮置き</summary>
+	NijiuraChan__Ts
 }
 
 enum SureyomiChanBoardItem {

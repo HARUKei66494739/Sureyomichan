@@ -23,7 +23,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	public record class DialogParams(
 		string UrlString,
 		Helpers.IApiUrl Url,
-		int ThreadNo,
+		Helpers.ThreadId ThreadId,
 		bool IsLatest,
 		Core.IConfigProxy Config,
 		Core.UiMessageMultiDispatcher Dispatcher,
@@ -191,18 +191,18 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		if(this.api.Value != null) {
 			this.StopYomiage();
 			if(this.param is { }) {
-				this.param.Store.Clear(this.param.ThreadNo);
+				this.param.Store.Clear(this.param.ThreadId);
 				Utils.ImageUtil.ImageStore.Remove(
 					SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId),
-					this.param.ThreadNo);
+					this.param.ThreadId);
 			}
 		}
 	}
 
 
 	private bool StartYomiage(bool isLatest) {
-		Task<Models.NgResult> safeIsNgFromBody(int threadNo, Models.SureyomiChanModel model, Models.DifferenceHash? dhash)
-			=> this.param.Ng?.IsNgFromBody(threadNo, model, dhash) switch {
+		Task<Models.NgResult> safeIsNgFromBody(Helpers.ThreadId threadId, Models.SureyomiChanModel model, Models.DifferenceHash? dhash)
+			=> this.param.Ng?.IsNgFromBody(threadId, model, dhash) switch {
 				{ } v => v,
 				_ => Task.FromResult(Models.NgResult.Default),
 			};
@@ -219,7 +219,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			return false;
 		}
 
-		Utils.Logger.Instance.Info($"読み上げを開始します => {SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId)}, {this.param.ThreadNo}");
+		Utils.Logger.Instance.Info($"読み上げを開始します => {SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId)}, {this.param.ThreadId}");
 		var yomiage = new Core.Yomiage(this.param.Bouyomi, this.param.Config);
 		var prevResponse = default(Models.SureyomiChanResponse);
 		this.ThreadDieText.Value = "";
@@ -227,7 +227,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			api.Value = new Core.SureyomiChanApiLooper(
 				this.param.UrlString,
 				this.param.Url,
-				this.param.ThreadNo,
+				this.param.ThreadId,
 				this.uiMsgDispatcher,
 				this.param.Config,
 				this.param.WebView);
@@ -256,13 +256,13 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 						var speak = new List<Models.SureyomiChanModel>();
 						var disp = new List<BindableSureyomi>();
 						var images = new List<byte[]>();
-						foreach(var it in x.NewReplies) {
+						foreach(var it in x.Response.NewReplies) {
 							var attachments = await it.Interaction.DownloadImages();
 							var isNg = false;
 							var body = it.ToSpeakText();
 							var dHash = attachments.FirstOrDefault()?.Hash;
 							foreach(var it2 in await Task.WhenAll(
-								safeIsNgFromBody(x.ThreadNo, it, dHash),
+								safeIsNgFromBody(x.Response.ThreadId, it, dHash),
 								safeIsNgFromImage(dHash),
 								delay(500))) {
 								isNg |= it2.IsNg;
@@ -285,35 +285,35 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 
 								if(attachments.Count() != 0) {
 									yomiImage(attachments);
-									await this.param.AttachmentWriter.Save(it, attachments);
+									await this.param.AttachmentWriter.Save(x.Info, it, attachments);
 								}
 								if(this.param.Config.Get().IsEnabledUpFile) {
-									_ = this.param.AttachmentWriter.DownloadShio(it);
+									_ = this.param.AttachmentWriter.DownloadShio(x.Info, it);
 								}
 							}
 							foreach(var ao in attachments) {
 								if(ao.ImageFileBytes is { }) {
 									Utils.ImageUtil.ImageStore.Insert(
 										SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId),
-										this.param.ThreadNo,
+										this.param.ThreadId,
 										ao.ImageName,
 										ao.ImageFileBytes);
 								}
 							}
 							disp.Add(new(it, attachments, isNg));
-							this.param.Store.Add(this.param.ThreadNo, it, isNg, attachments);
+							this.param.Store.Add(this.param.ThreadId, it, isNg, attachments);
 						}
 
-						await this.param.AttachmentWriter.UpdateThreadNo(x);
-						this.ProcessYomiage(x, prevResponse, yomiage);
-						if(x.SupportFeature.IsSupportThreadDie && !x.IsAlive) {
-							await this.param.AttachmentWriter.DeadThreadNo(x);
+						await this.param.AttachmentWriter.UpdateThreadNo(x.Info, x.Response);
+						this.ProcessYomiage(x.Response, prevResponse, yomiage);
+						if(x.Response.SupportFeature.IsSupportThreadDie && !x.Response.IsAlive) {
+							await this.param.AttachmentWriter.DeadThreadNo(x.Info, x.Response);
 						}
 
 						uiMsgDispatcher.DispatchNewRiplies(disp);
 					}
 					finally {
-						prevResponse = x;
+						prevResponse = x.Response;
 					}
 				},
 				skipToLast: isLatest,
@@ -419,12 +419,20 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	}
 
 	private void OnOpenFolder() {
-		if(this.param is { } && Utils.Util.GetSaveDirectoryPath(
-			this.param.Config.Get(),
-			this.param.Url.BoardId,
-			this.param.ThreadNo) is { } d
-			&& System.IO.Directory.Exists(d)) {
-		
+		string? path() {
+			if(!(this.param is { } p)) {
+				return null;
+			}
+			if(!(this.api.Value?.ThreadInfo is { } info)) {
+				return null;
+			}
+			return Utils.Util.GetSaveDirectoryPath(
+				p.Config.Get(),
+				info);
+		}
+
+		var d = path();
+		if(System.IO.Directory.Exists(d)) {
 			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(d) {
 				UseShellExecute = true
 			});

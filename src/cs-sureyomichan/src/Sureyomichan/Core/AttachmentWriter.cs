@@ -24,7 +24,7 @@ class AttachmentWriter {
 
 	private readonly UiMessageMultiDispatcher uiDispatcher;
 
-	private Dictionary<string, int> currentThreadId = new();
+	private Dictionary<string, Helpers.ThreadId> currentThreadId = new();
 	private object downloadToken = new();
 
 	public AttachmentWriter(IConfigProxy config, UiMessageMultiDispatcher uiDispatcher) {
@@ -78,34 +78,34 @@ class AttachmentWriter {
 		await Task.WhenAll(tasks);
 	}
 
-	public async Task UpdateThreadNo(Models.SureyomiChanResponse response) {
+	public async Task UpdateThreadNo(Models.SureyomiChanThreadInfo info, Models.SureyomiChanResponse response) {
 		var fileName = SureyomiChanEnviroment.GetStaticString(response.BoardId, SureyomiChanBoardItem.ThreadNoFileName);
 		lock(this.lockObj) {
 			if(this.currentThreadId.ContainsKey(fileName)) {
-				if(this.currentThreadId[fileName] == response.ThreadNo) {
+				if(this.currentThreadId[fileName] == response.ThreadId) {
 					return;
 				} else {
-					this.currentThreadId[fileName] = response.ThreadNo;
+					this.currentThreadId[fileName] = response.ThreadId;
 				}
 			} else {
-				this.currentThreadId.Add(fileName, response.ThreadNo);
+				this.currentThreadId.Add(fileName, response.ThreadId);
 			}
 		}
 
 		if(this.config.Get().SaveThreadNoEnabled) {
-			Utils.Logger.Instance.Info($"{fileName}を更新 => {response.ThreadNo}");
+			Utils.Logger.Instance.Info($"{fileName}を更新 => {info.ThreadNo}");
 			await File.WriteAllBytesAsync(
 				Path.Combine(this.config.Get().PathDwonloadValue, fileName),
-				Encoding.UTF8.GetBytes($"{response.ThreadNo}"));
+				Encoding.UTF8.GetBytes($"{info.ThreadNo}"));
 		} else {
 			await Task.Yield();
 		}
 	}
 
-	public async Task DeadThreadNo(Models.SureyomiChanResponse response) {
+	public async Task DeadThreadNo(Models.SureyomiChanThreadInfo info, Models.SureyomiChanResponse response) {
 		var fileName = SureyomiChanEnviroment.GetStaticString(response.BoardId, SureyomiChanBoardItem.ThreadNoFileName);
 		if(this.currentThreadId.ContainsKey(fileName)) {
-			if(this.currentThreadId[fileName] == response.ThreadNo) {
+			if(this.currentThreadId[fileName] == info.ThreadId) {
 				this.currentThreadId.Remove(fileName);
 			} else {
 				return;
@@ -124,13 +124,13 @@ class AttachmentWriter {
 		}
 	}
 
-	public async Task Save(Models.SureyomiChanModel model, IEnumerable<Models.AttachmentObject> attachments) {
+	public async Task Save(Models.SureyomiChanThreadInfo info, Models.SureyomiChanModel model, IEnumerable<Models.AttachmentObject> attachments) {
 		foreach(var it in attachments) {
-			await this.Save(model, it);
+			await this.Save(info, model, it);
 		}
 	}
 
-	private async Task Save(Models.SureyomiChanModel model, Models.AttachmentObject attachment) {
+	private async Task Save(Models.SureyomiChanThreadInfo info, Models.SureyomiChanModel model, Models.AttachmentObject attachment) {
 		this.downloadToken = new();
 		var orig = attachment.OriginalFileBytes;
 		var image = attachment.ImageFileBytes;
@@ -203,7 +203,7 @@ class AttachmentWriter {
 			if(config.Get().IsEnabledAttacmentFile) {
 				await Task.Run(async () => {
 					Utils.Logger.Instance.Info($"オリジナルを保存します => {attachment.FileName}");
-					string saveRoot = GetSaveDirectoryWithCreate(model);
+					string saveRoot = GetSaveDirectoryWithCreate(info);
 
 					// 作成出来ている場合保存
 					if(Directory.Exists(saveRoot)) {
@@ -232,7 +232,7 @@ class AttachmentWriter {
 	/// <summary>アップローダからファイルをダウンロード</summary>
 	/// <param name="model"></param>
 	/// <returns></returns>
-	public async Task DownloadShio(Models.SureyomiChanModel model) {
+	public async Task DownloadShio(Models.SureyomiChanThreadInfo info, Models.SureyomiChanModel model) {
 		static string? url(string bottle, string fileName) =>  bottle switch {
 			"fu" => $"https://dec.2chan.net/up2/src/{fileName}",
 			"f" => $"https://dec.2chan.net/up/src/{fileName}",
@@ -251,7 +251,7 @@ class AttachmentWriter {
 			return;
 		}
 
-		string saveRoot = GetSaveDirectoryWithCreate(model);
+		var saveRoot = GetSaveDirectoryWithCreate(info);
 
 		// 作成出来ている場合保存
 		if(Directory.Exists(saveRoot)) {
@@ -306,18 +306,17 @@ class AttachmentWriter {
 			Utils.Logger.Instance.Error("保存フォルダが存在しません");
 		}
 	}
-	private string? GetSaveDirectoryWithCreate(Models.SureyomiChanResponse res) {
-		if(res.NewReplies?.FirstOrDefault() is { } v) {
-			return GetSaveDirectoryWithCreate(v);
+	private string? GetSaveDirectoryWithCreate(Models.SureyomiChanThreadInfo info, Models.SureyomiChanResponse res) {
+		if(0 < res.NewReplies?.Count()) {
+			return GetSaveDirectoryWithCreate(info);
 		}
 		return null;
 	}
 
-	private string GetSaveDirectoryWithCreate(Models.SureyomiChanModel model) {
+	private string GetSaveDirectoryWithCreate(Models.SureyomiChanThreadInfo info) {
 		var saveRoot = Utils.Util.GetSaveDirectoryPath(
 			this.config.Get(),
-			model.Interaction.BoardId,
-			model.ThreadNo);
+			info);
 
 		// 存在しない場合フォルダを作る
 		if(!Directory.Exists(saveRoot)) {

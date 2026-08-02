@@ -1,3 +1,4 @@
+using Haru.Kei.SureyomiChan.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,7 +50,7 @@ class FutabaInteraction(string url, Models.__FutabaResData source, Helpers.Futab
 	}
 }
 
-class NijiuraChanInteraction(string url, Models.NijiuraChanReplyV1 source, Helpers.NijiuraChanApi? api, IConfigProxy config) : Models.ISureyomiChanInteraction {
+class NijiuraChanInteraction(Models.NijiuraChanReplyV1 source) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
 	public bool IsSupportSendDel => false;
 	public bool IsSupportDeleteRes => false;
@@ -64,7 +65,7 @@ class NijiuraChanInteraction(string url, Models.NijiuraChanReplyV1 source, Helpe
 		=> await NijiuraChanUtil.DownloadImages(source.Image, source.Thumb, null);
 }
 
-class NijiuraChanInternalInteraction(string url, Models.NijiuraChanPostInternal source, Helpers.NijiuraChanApi? api, IConfigProxy config) : Models.ISureyomiChanInteraction {
+class NijiuraChanInternalInteraction(Models.NijiuraChanPostInternal source) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
 	public bool IsSupportSendDel => false;
 	public bool IsSupportDeleteRes => false;
@@ -77,6 +78,75 @@ class NijiuraChanInternalInteraction(string url, Models.NijiuraChanPostInternal 
 
 	public async Task<IEnumerable<Models.AttachmentObject>> DownloadImages()
 		=> await NijiuraChanUtil.DownloadImages(source.Attachment?.Path, source.Attachment?.Thumbnail, source.Attachment?.IsOekaki);
+}
+
+class NijiuraChanTsInteraction(Models.NijiuraChanPost source) : Models.ISureyomiChanInteraction {
+	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChan__Ts;
+	public bool IsSupportSendDel => false;
+	public bool IsSupportDeleteRes => false;
+
+	public async Task<bool> DeleteResAction()
+		=> await Task.FromResult(false);
+
+	public async Task<bool> SendDelAction()
+		=> await Task.FromResult(false);
+
+	public async Task<IEnumerable<Models.AttachmentObject>> DownloadImages() {
+		static async Task<Models.AttachmentObject> download(NijiuraChanAttachment attachment) {
+			var fileName = Path.GetFileName(attachment.OriginalUrl);
+			var imageName = Path.GetFileName(attachment.OriginalUrl);
+			var orig = default(byte[]?);
+			var image = default(byte[]?);
+
+			var httpClient = Utils.Singleton.Instance.HttpClient;
+			var origUrl = attachment.OriginalUrl;
+			var thumbUrl = attachment.ThumbnailUrl;
+
+			try {
+				using var response1 = await Utils.Util.Http(() => httpClient.GetAsync(origUrl));
+				orig = await response1.Content.ReadAsByteArrayAsync();
+				if(Path.GetExtension(fileName).ToLower() switch {
+					".mp4" => true,
+					".webm" => true,
+					_ => false,
+				}) {
+					using var response2 = await Utils.Util.Http(() => httpClient.GetAsync(thumbUrl));
+					image = await response2.Content.ReadAsByteArrayAsync();
+					imageName = Path.GetFileName(thumbUrl);
+				} else {
+					image = orig;
+				}
+
+			}
+			catch(Exception e) when((e is Exceptions.ApiHttpErrorException)
+				|| (e is Exceptions.ApiHttpConnectionException)) { }
+
+
+			if(image is null || (0 == image.Count())) {
+				return Models.AttachmentObject.Empty(fileName,imageName);
+			}
+
+			return new Models.AttachmentObject() {
+				IsUpdatedTegakiPng = attachment.IsOekaki,
+				FileName = fileName,
+				ImageName = imageName,
+				OriginalFileBytes = orig,
+				ImageFileBytes = image,
+				Hash = image switch {
+					{ } => Models.DifferenceHash.From(imageName, image),
+					_ => default,
+				}
+			};
+		}
+
+		var tasks = source.Attachments
+			.Select(x => download(x))
+			.ToArray();
+		await Task.WhenAll(tasks);
+		return tasks.Select(x => x.Result)
+			.ToArray()
+			.AsReadOnly();
+	}
 }
 
 

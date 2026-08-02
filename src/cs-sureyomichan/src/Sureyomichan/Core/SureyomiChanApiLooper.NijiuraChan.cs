@@ -1,28 +1,41 @@
+using Haru.Kei.SureyomiChan.Helpers;
 using Haru.Kei.SureyomiChan.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reactive.Linq;
+using System.Security.Policy;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Haru.Kei.SureyomiChan.Core; 
 partial class SureyomiChanApiLooper {
 	class NijiuraChanApiWorker : IWorker {
 		private readonly IConfigProxy config;
-		private readonly string urlString;
-		private readonly int threadNo;
+		private readonly Helpers.IApiUrl url;
+		private readonly Helpers.ThreadId threadId;
 		private readonly WebView2Proxy webView;
 
-		public NijiuraChanApiWorker(string urlString, int threadNo, IConfigProxy config, WebView2Proxy webView) {
-			this.urlString = urlString;
-			this.threadNo = threadNo;
+		public NijiuraChanApiWorker(Helpers.IApiUrl url, Helpers.ThreadId threadId, IConfigProxy config, WebView2Proxy webView) {
+			this.url = url;
+			this.threadId = threadId;
 			this.config = config;
 
 			this.webView = webView;
 		}
 
+		public IObservable<Models.SureyomiChanThreadInfo> GetThreadInfo()
+			=> Observable.Return(new Models.SureyomiChanThreadInfo() {
+				BoardId = this.url.BoardId,
+				ThreadId = this.threadId,
+				ThreadNo = this.threadId.ThreadNo,
+			}).ObserveOn(System.Reactive.Concurrency.ImmediateScheduler.Instance);
+
 		public IObservable<SureyomiChanResponse> GetThread(int? latestResNo) {
-			var url = Utils.Singleton.Instance.NijiuraChanUrl.GenApiThread(this.threadNo, latestResNo);
+			var url = this.GenApiThread(this.threadId.ThreadNo, latestResNo);
 			return Observable.Return(url)
 				.ObserveOn(System.Reactive.Concurrency.ThreadPoolScheduler.Instance)
 				.Select(x => {
@@ -42,16 +55,23 @@ partial class SureyomiChanApiLooper {
 
 					return new Models.SureyomiChanResponse() {
 						BoardId = SureyomiChanBoardId.NijiuraChanAimg,
-						ThreadNo = threadNo,
+						ThreadId = this.threadId,
 						IsAlive = true,
 						IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= (replies.LastOrDefault()?.Number ?? 0),
 						Soudane = 0,
 						CurrentTime = nowTime,
 						DieTime = nowTime.AddHours(1),
-						NewReplies = replies.Select(x => x.ToSureyomiChanModel(this.threadNo, new NijiuraChanInteraction(this.urlString, x, null, this.config))).ToArray() ?? new SureyomiChanModel[0],
+						NewReplies = replies.Select(x => x.ToSureyomiChanModel(this.threadId, new NijiuraChanInteraction(x))).ToArray() ?? new SureyomiChanModel[0],
 						SupportFeature = new NijiuraChanFeature(),
 					};
 				});
+		}
+		
+		private string GenApiThread(int thread, int? latestNo) {
+			return latestNo switch {
+				int v => $"https://nijiurachan.net/api/v1/thread/{thread}/new?after={v}",
+				_ => $"https://nijiurachan.net/api/v1/thread/{thread}"
+			};
 		}
 	}
 
@@ -60,24 +80,31 @@ partial class SureyomiChanApiLooper {
 
 	class NijiuraChanInternalApiWorker : IWorker {
 		private readonly IConfigProxy config;
-		private readonly string urlString;
-		private readonly int threadNo;
+		private readonly Helpers.IApiUrl url;
+		private readonly Helpers.ThreadId threadId;
 		private readonly WebView2Proxy webView;
 
-		public NijiuraChanInternalApiWorker(string urlString, int threadNo, IConfigProxy config, WebView2Proxy webView) {
-			this.urlString = urlString;
-			this.threadNo = threadNo;
+		public NijiuraChanInternalApiWorker(Helpers.IApiUrl url, Helpers.ThreadId threadNo, IConfigProxy config, WebView2Proxy webView) {
+			this.url = url;
+			this.threadId = threadNo;
 			this.config = config;
 
 			this.webView = webView;
 		}
+
+		public IObservable<Models.SureyomiChanThreadInfo> GetThreadInfo()
+			=> Observable.Return(new Models.SureyomiChanThreadInfo() {
+				BoardId = this.url.BoardId,
+				ThreadId = this.threadId,
+				ThreadNo = this.threadId.ThreadNo,
+			}).ObserveOn(System.Reactive.Concurrency.ImmediateScheduler.Instance);
 
 		public IObservable<SureyomiChanResponse> GetThread(int? latestResNo) {
 			static string getApi(int threadNo, int? latestResNo) {
 				return $"https://nijiurachan.net/api/thread/{threadNo}";
 			}
 
-			var url = getApi(this.threadNo, latestResNo);
+			var url = getApi(this.threadId.ThreadNo, latestResNo);
 			return Observable.Return(url)
 				.ObserveOn(System.Reactive.Concurrency.ThreadPoolScheduler.Instance)
 				.Select(x => {
@@ -98,19 +125,61 @@ partial class SureyomiChanApiLooper {
 
 						return new Models.SureyomiChanResponse() {
 							BoardId = SureyomiChanBoardId.NijiuraChanAimg,
-							ThreadNo = threadNo,
+							ThreadId = threadId,
 							IsAlive = !o?.Data?.Thread.IsArchived ?? true,
 							IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= (replies.LastOrDefault()?.NumberInThread ?? 0),
 							Soudane = o?.Data?.Thread.SoudaneCount ?? 0,
 							CurrentTime = nowTime,
 							DieTime = o?.Data?.Thread.ExpiresAtDateTime ?? nowTime.AddHours(1),
-							NewReplies = replies.Select(x => x.ToSureyomiChanModel(this.threadNo, new NijiuraChanInternalInteraction(this.urlString, x, null, this.config))).ToArray(),
+							NewReplies = replies.Select(x => x.ToSureyomiChanModel(this.threadId, new NijiuraChanInternalInteraction(x))).ToArray(),
 							SupportFeature = new NijiuraChaninternalFeature(),
 						};
 					}
 					catch(JsonException _) {
 						throw new Exceptions.ApiInvalidJsonException(json);
 					}
+				});
+		}
+	}
+
+
+	class NijiuraChanTsApiWorker : IWorker {
+		private readonly NijiuraChanTsApi api;
+		private readonly IConfigProxy config;
+		private readonly Helpers.IApiUrl url;
+		private readonly Helpers.ThreadId threadId;
+		private readonly WebView2Proxy webView;
+
+		public NijiuraChanTsApiWorker(Helpers.IApiUrl url, Helpers.ThreadId threadNo, IConfigProxy config, WebView2Proxy webView) {
+			this.url = url;
+			this.threadId = threadNo;
+			this.config = config;
+
+			this.api = Utils.Singleton.Instance.NijiuraChanTsApi;
+			this.webView = webView;
+		}
+
+		public IObservable<Models.SureyomiChanThreadInfo> GetThreadInfo()
+			=> this.api.GetThreadInfoSerial($"{this.threadId}")
+				.Select(x => new Models.SureyomiChanThreadInfo() {
+					BoardId = this.url.BoardId,
+					ThreadId = this.threadId,
+					ThreadNo = x.BoardNo,
+				});
+
+		public IObservable<Models.SureyomiChanResponse> GetThread(int? latestResNo) {
+			var nowTime = DateTime.Now;
+			return this.api.GetThreadSerial($"{this.threadId}", latestResNo)
+				.Select(x => new Models.SureyomiChanResponse() {
+					BoardId = SureyomiChanBoardId.NijiuraChan__Ts,
+					ThreadId = threadId,
+					IsAlive = x.ArchivedAt is null,
+					IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= x.ReplyCount,
+					Soudane = x.PostStates?.Where(y => y.Sequence == 0).FirstOrDefault()?.Reaction.Up ?? 0,
+					CurrentTime = nowTime,
+					DieTime = x.ExpiresAtDateTime,
+					NewReplies = x.NewPosts.Select(y => y.ToSureyomiChanModel(this.threadId, new NijiuraChanTsInteraction(y))).ToArray(),
+					SupportFeature = new NijiuraChanTsFeature(),
 				});
 		}
 	}
@@ -123,6 +192,12 @@ file class NijiuraChanFeature : ISureyomiChanFeature {
 }
 
 file class NijiuraChaninternalFeature : ISureyomiChanFeature {
+	public bool IsSupportThreadOld => true;
+	public bool IsSupportThreadDie => true;
+	public bool IsSupportInspectSoudane => true;
+}
+
+file class NijiuraChanTsFeature : ISureyomiChanFeature {
 	public bool IsSupportThreadOld => true;
 	public bool IsSupportThreadDie => true;
 	public bool IsSupportInspectSoudane => true;

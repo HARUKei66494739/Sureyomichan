@@ -11,9 +11,20 @@ using System.Threading.Tasks;
 
 namespace Haru.Kei.SureyomiChan.Models;
 
+class SureyomiChanThreadInfo {
+	public required SureyomiChanBoardId BoardId { get; init; }
+	public required Helpers.ThreadId ThreadId { get; init; }
+	public required int ThreadNo { get; init; }
+
+	/*
+	public required DateTime PostTime { get; init; }
+	public required string Body { get; init; }
+	*/
+}
+
 class SureyomiChanResponse {
 	public required SureyomiChanBoardId BoardId { get; init; }
-	public required int ThreadNo { get; init; }
+	public required Helpers.ThreadId ThreadId { get; init; }
 	public required bool IsAlive { get; init; }
 	public required bool IsMaxRes { get; init; }
 	public required DateTime CurrentTime { get; init; }
@@ -25,7 +36,7 @@ class SureyomiChanResponse {
 }
 
 class SureyomiChanModel(
-	int threadNo,
+	Helpers.ThreadId threadId,
 	int resIndex,
 	int no,
 	DateTime postTime,
@@ -40,7 +51,7 @@ class SureyomiChanModel(
 	IEnumerable<Models.Token> token,
 	ISureyomiChanInteraction interaction) {
 
-	public int ThreadNo { get; } = threadNo;
+	public Helpers.ThreadId ThreadId { get; } = threadId;
 	public int ResIndex { get; } = resIndex;
 	public int No { get; } = no;
 	public DateTime PostTime { get; } = postTime;

@@ -71,9 +71,21 @@ function __toBase64(s) {{
 		.toBase64();
 }}
 
+function __getTegakiSaveJson(param) {{
+	if(param.threadId) {{
+		return chrome.webview.hostObjects.sync.TegakiSaveObject.GetStoreFromId(param.threadId);
+	}}
+
+	if(param.threadNo) {{
+		retrun chrome.webview.hostObjects.sync.TegakiSaveObject.GetStoreFromNo(param.threadNo);
+	}}
+
+	return null;
+}}
+
 function __runNgPlugins(base64) {{
 	const param = JSON.parse(__fromBase64(base64));
-	const tegaki = JSON.parse(chrome.webview.hostObjects.sync.TegakiSaveObject.GetStore(param.threadNo));
+	const tegaki = JSON.parse(__getTegakiSaveJson(param));
 	param.res.__tegaki_res = tegaki.res;
 	const pResult = runPlugins({{
 		point: 'read',
@@ -111,13 +123,12 @@ function __runNgPlugins(base64) {{
 		}
 	}
 
-	public async Task<Models.TegakiSavePluginResult?> RunPlugin(int threadNo, Models.SureyomiChanModel res, ulong? imageHash) {
+	public async Task<Models.TegakiSavePluginResult?> RunPlugin(Helpers.ThreadId threadId, Models.SureyomiChanModel res, ulong? imageHash) {
 		var task = await Utils.Util.AwaitObserver(
 			Observable.Return(res)
 				.ObserveOn(Reactive.Bindings.UIDispatcherScheduler.Default)
 				.Select(async x => {
-					var json = new RunPluginParams() {
-						ThreadNo = threadNo,
+					var json = new RunPluginParams(threadId) {
 						Res = x.ToTegakiSaveModel(
 							isNg: false,
 							imageHash: imageHash,
@@ -178,16 +189,61 @@ function __runNgPlugins(base64) {{
 file class RunPluginParams : Models.JsonObject {
 	[JsonPropertyName("threadNo")]
 	[JsonInclude]
-	public required int ThreadNo { get; init; }
+	public int? __No {
+		get {
+			// 警告出るので迂回処理
+			if(field is null) {
+				field = this.threadId?.IsInt switch {
+					true => this.threadId.ThreadNo,
+					_ => null,
+				};
+			}
+			return field;
+		}
+		private set {
+			field = value;
+		}
+	}
+
+	[JsonPropertyName("threadId")]
+	[JsonInclude]
+	public string? __Id {
+		get {
+			// 警告出るので迂回処理
+			if(field is null) {
+				field = this.threadId?.IsString switch {
+					true => this.threadId.ToString(),
+					_ => null,
+				};
+			}
+			return field;
+		}
+		private set {
+			field = value;
+		}
+	}
+
 
 	[JsonPropertyName("res")]
 	[JsonInclude]
 	public required Models.TegakiSaveResData Res { get; init; }
+
+
+	private readonly Helpers.ThreadId? threadId;
+
+	// requiredがあるとJSONシリアライズでエラーが出るのでコンストラクタでとる
+	public RunPluginParams(Helpers.ThreadId threadId) {
+		this.threadId = threadId;
+	}
+
+	// JSONシリアライザ用コンストラクタ
+	private RunPluginParams() { }
 }
 
 
 [ComVisible(true)]
 [Guid("326DF6C0-B080-4C84-99A7-14DBDF6062B3")]
 public class HostObject(ITegakiSaveStore tegakiSaveStore) {
-	public string GetStore(int resNo) => tegakiSaveStore.GetStore(resNo);
+	public string GetStoreFromNo(int resNo) => tegakiSaveStore.GetStore(resNo);
+	public string GetStoreFromId(string resId) => tegakiSaveStore.GetStore(resId);
 }
