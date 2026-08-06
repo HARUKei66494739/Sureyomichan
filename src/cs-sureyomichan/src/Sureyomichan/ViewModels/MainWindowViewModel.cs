@@ -46,7 +46,7 @@ class MainWindowViewModel : BindableBase {
 	}
 	public InteractionMessenger LivetMessenger { get; } = new();
 
-	public IReadOnlyReactiveProperty<string> BuildString { get; } = new ReactivePropertySlim<string>(initialValue: "v.yyyymmdd..");
+	public IReadOnlyReactiveProperty<string> BuildString { get; } = new ReactivePropertySlim<string>(initialValue: SureyomiChanEnviroment.Build);
 
 	private ReactivePropertySlim<LayoutMode> Layout { get; } = new(initialValue: LayoutMode.None);
 	private ReactivePropertySlim<ProcessState> ApiState { get; } = new(initialValue: ProcessState.Sucess);
