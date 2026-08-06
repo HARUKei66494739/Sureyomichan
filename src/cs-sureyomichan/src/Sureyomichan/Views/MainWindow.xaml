@@ -1034,6 +1034,16 @@
 
 
         <Grid Visibility="{Binding StartPageVisibility.Value, Mode=OneWay}">
+            <Border Padding="8">
+                <TextBlock
+                    Style="{StaticResource MaterialDesignBody2TextBlock}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    >
+                    <Run Text="build." />
+                    <Run Text="{Binding BuildString.Value, Mode=OneWay}" />
+                </TextBlock>
+            </Border>
             <Grid MaxWidth="720" HorizontalAlignment="Stretch" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -1045,7 +1055,6 @@
                     <RowDefinition Height="8" />
                     <RowDefinition Height="36" />
                 </Grid.RowDefinitions>
-
                 <TextBox
                     Grid.Column="0" Grid.ColumnSpan="3"
                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
