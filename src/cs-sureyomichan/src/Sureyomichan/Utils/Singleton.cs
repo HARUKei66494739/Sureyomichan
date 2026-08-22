@@ -9,17 +9,14 @@ namespace Haru.Kei.SureyomiChan.Utils;
 
 class Singleton {
 	private readonly Helpers.FutabaUrl futabaUrl = new();
-	private readonly Helpers.NijiuraChanUrl nijiuraChanUrl = new();
-	private readonly Helpers.NijiuraChanTsUrl nijiuraChanTsUrl = new();
+	private readonly Helpers.NijiuraChanUrl nijiuraChanTsUrl = new();
 
 	public HttpClient HttpClient { get; }
 	public Helpers.IApiUrl FutabaUrl => this.futabaUrl;
-	public Helpers.IApiUrl NijiuraChanUrl => this.nijiuraChanUrl;
 	public Helpers.IApiUrl NijiuraChanTsUrl => this.nijiuraChanTsUrl;
 
 	public Helpers.FutabaApi FutabaApi { get; }
-	public Helpers.NijiuraChanApi NijiuraChanApi { get; }
-	public Helpers.NijiuraChanTsApi NijiuraChanTsApi { get; }
+	public Helpers.NijiuraChanApi NijiuraChanTsApi { get; }
 
 	public Helpers.StartupSequence StartupSequence { get; } = new();
 	public EventAggregator PrismMessenger { get; } = new();
@@ -41,7 +38,6 @@ class Singleton {
 		this.HttpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
 		this.FutabaApi = new(this.HttpClient, this.futabaUrl);
-		this.NijiuraChanApi = new(this.HttpClient, this.NijiuraChanUrl);
 		this.NijiuraChanTsApi = new(this.HttpClient, this.NijiuraChanTsUrl);
 	}
 

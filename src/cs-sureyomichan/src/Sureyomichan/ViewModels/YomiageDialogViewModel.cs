@@ -31,6 +31,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		Core.AttachmentWriter AttachmentWriter,
 		Core.TegakiSaveStore Store,
 		Core.WebView2Proxy WebView,
+		Core.__NijiuraChanWebView2Proxy __NijiuraChanWebView,
 		Core.SureyomiChanNgProcesser Ng);
 	enum ProcessState {
 		Sucess,
@@ -230,7 +231,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				this.param.ThreadId,
 				this.uiMsgDispatcher,
 				this.param.Config,
-				this.param.WebView);
+				this.param.__NijiuraChanWebView);
 			{
 				var c = this.param.Config.Get();
 				yomiage.DoYomiageOnce(c.YomiageStarted, nameof(c.YomiageStarted));

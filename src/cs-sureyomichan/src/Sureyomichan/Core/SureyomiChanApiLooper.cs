@@ -22,15 +22,14 @@ partial class SureyomiChanApiLooper : IDisposable {
 	private IDisposable? runSubscriber = null;
 	private bool isDisposed = false;
 
-	public SureyomiChanApiLooper(string urlString, Helpers.IApiUrl url, Helpers.ThreadId threadId, UiMessageDispatcher uiMsgDispatcher, IConfigProxy config, WebView2Proxy webView) {
+	public SureyomiChanApiLooper(string urlString, Helpers.IApiUrl url, Helpers.ThreadId threadId, UiMessageDispatcher uiMsgDispatcher, IConfigProxy config, __NijiuraChanWebView2Proxy webView) {
 		this.uiMsgDispatcher = uiMsgDispatcher;
 		this.config = config;
 
 		this.cancel = new();
 		this.worker = url.BoardId switch {
 			SureyomiChanBoardId.FutabaImg => new FutabaApiWorker(url, threadId, this.config),
-			SureyomiChanBoardId.NijiuraChanAimg => new NijiuraChanInternalApiWorker(url, threadId, this.config, webView),
-			SureyomiChanBoardId.NijiuraChan__Ts => new NijiuraChanTsApiWorker(url, threadId, this.config, webView),
+			SureyomiChanBoardId.NijiuraChanAimg => new NijiuraChanApiWorker(url, threadId, this.config, webView),
 			_ => throw new NotSupportedException()
 		};
 		Utils.Logger.Instance.Info($"ApiLooperの作成完了 => url={url.GetType().Name}, worker={this.worker.GetType().Name}");
@@ -84,9 +83,7 @@ partial class SureyomiChanApiLooper : IDisposable {
 								uiMsgDispatcher.DispatchEndGetApi(true, x);
 
 								this.ThreadInfo = x.Info;
-								if(x.Response.NewReplies.LastOrDefault() is { } it) {
-									latestNo = it.No;
-								}
+								latestNo = x.Response.LatestResNo;
 
 								await callBack(x, skip);
 								skip = false;
