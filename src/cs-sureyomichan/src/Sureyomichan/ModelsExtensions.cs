@@ -226,7 +226,7 @@ static class ModelsExtensions {
 		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
 			threadId: threadId,
 			resIndex: source.Sequence,
-			no: source.BoardNo,
+			no: source.PostNo,
 			postTime: source.CreatedAtDateTime,
 			email: "",
 			body: RemoveUnicodePrivateChar(source.Body),

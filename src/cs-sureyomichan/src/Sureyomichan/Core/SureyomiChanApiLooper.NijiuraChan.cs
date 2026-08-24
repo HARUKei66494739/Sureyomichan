@@ -42,7 +42,7 @@ partial class SureyomiChanApiLooper {
 				.Select(x => new Models.SureyomiChanThreadInfo() {
 					BoardId = this.url.BoardId,
 					ThreadId = this.threadId,
-					ThreadNo = x.BoardNo,
+					ThreadNo = x.PostNo,
 				});
 
 		public IObservable<Models.SureyomiChanResponse> GetThread(int? latestResNo) {

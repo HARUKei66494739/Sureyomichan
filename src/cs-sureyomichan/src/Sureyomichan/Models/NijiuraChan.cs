@@ -23,9 +23,9 @@ class NijiuraChanChunk : JsonObject {
 	[JsonInclude]
 	public int Sequence { get; private set; }
 
-	[JsonPropertyName("boardNo")]
+	[JsonPropertyName("postSequenceNo")]
 	[JsonInclude]
-	public int BoardNo { get; private set; }
+	public int PostNo { get; private set; }
 
 	/*
 	[JsonPropertyName("body")]
@@ -100,9 +100,9 @@ class NijiuraChanPost : JsonObject {
 	[JsonInclude]
 	public int Sequence { get; private set; }
 
-	[JsonPropertyName("boardNo")]
+	[JsonPropertyName("postSequenceNo")]
 	[JsonInclude]
-	public int BoardNo { get; private set; }
+	public int PostNo { get; private set; }
 
 
 	[JsonPropertyName("body")]
