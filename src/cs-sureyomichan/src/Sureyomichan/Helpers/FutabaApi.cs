@@ -1,4 +1,4 @@
-using ControlzEx.Standard;
+using Haru.Kei.SureyomiChan.Models;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -15,11 +15,12 @@ using System.Threading.Tasks;
 namespace Haru.Kei.SureyomiChan.Helpers;
 
 class FutabaApi {
+	private readonly Random random = new();
 	private readonly HttpClient httpClient;
-	private readonly IApiUrl apiUrl;
+	private readonly FutabaUrl apiUrl;
 	private readonly SerialRunner serialRunner = new(1000);
 
-	public FutabaApi(HttpClient httpClient, IApiUrl apiUrl) {
+	public FutabaApi(HttpClient httpClient, FutabaUrl apiUrl) {
 		this.httpClient = httpClient;
 		this.apiUrl = apiUrl;
 	}
@@ -27,7 +28,7 @@ class FutabaApi {
 	public async Task<Models.FutabaResponse> GetThread(int threadId, int? latestResId = null) {
 		var json = "";
 		try {
-			using var r = await Utils.Util.Http(() => httpClient.GetAsync(this.apiUrl.GenApiThread(threadId, latestResId)));
+			using var r = await Utils.Util.Http(() => httpClient.GetAsync(this.GenApiThread(threadId, latestResId)));
 			json = await r.Content.ReadAsStringAsync();
 			if (JsonSerializer.Deserialize<Models.FutabaResponse>(json) is { } obj) {
 				return obj;
@@ -41,7 +42,7 @@ class FutabaApi {
 	}
 
 	public async Task<bool> PostDelete(int resNo, string passwd) {
-		var url = this.apiUrl.GenApiDelete();
+		var url = this.GenApiDelete();
 		var parameters = new Dictionary<string, string>() {
 			{ "responsemode", "ajax" },
 			{ $"{resNo}", "delete" },
@@ -66,7 +67,7 @@ class FutabaApi {
 			{ "d", $"{resNo}" },
 			{ "reason", $"{110}" },
 		};
-		var request = new HttpRequestMessage(HttpMethod.Post, this.apiUrl.GenApiDel());
+		var request = new HttpRequestMessage(HttpMethod.Post, this.GenApiDel());
 		request.Content = new FormUrlEncodedContent(parameters);
 		request.Headers.Add("referer", url);
 		using var response = await Utils.Util.Http(() => httpClient.SendAsync(request));
@@ -75,7 +76,7 @@ class FutabaApi {
 	}
 
 	public async Task<byte[]> DonwloadImage(Models.IAttachmentData model) {
-		using var response = await Utils.Util.Http(() => httpClient.GetAsync(this.apiUrl.GenImage(model)));
+		using var response = await Utils.Util.Http(() => httpClient.GetAsync(this.GenImage(model)));
 		return await response.Content.ReadAsByteArrayAsync();
 	}
 
@@ -87,5 +88,15 @@ class FutabaApi {
 
 	public IObservable<bool> PostDelSerial(string url, int resNo)
 		=> this.serialRunner.Dispatch(async () => await this.PostDel(url, resNo));
+
+	private string GenApiThread(int thread, int? latestNo) {
+		return latestNo switch {
+			int v => $"{this.apiUrl.FutabaEndPoint}?mode=json&res={thread}&start={latestNo + 1}&{random.NextDouble()}",
+			_ => $"{this.apiUrl.FutabaEndPoint}?mode=json&res={thread}&start={thread + 1}&{random.NextDouble()}"
+		};
+	}
+	private string GenApiDelete() => $"{this.apiUrl.FutabaEndPoint}?guid=on";
+	private string GenApiDel() => $"{this.apiUrl.FutabaDelEndPoint}";
+	private string GenImage(IAttachmentData data) => $"https://{this.apiUrl.Domain}.2chan.net/{data.AttachmentImage}";
 }
 

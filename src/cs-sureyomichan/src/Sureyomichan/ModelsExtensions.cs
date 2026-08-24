@@ -1,5 +1,4 @@
-using Haru.Kei.SureyomiChan.Core;
-using Haru.Kei.SureyomiChan.Models;
+using Haru.Kei.SureyomiChan.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
@@ -29,22 +28,13 @@ static class ModelsExtensions {
 		return s3;
 	}
 
-	private static DateTime NijiuraChanTime2Local(string time) {
-		if(DateTime.TryParseExact(time, "yyyy-MM-dd HH:mm:ss",
+	private static DateTime NijiuraChanTime2Local(string time)
+		=> DateTime.TryParse(time,
 			null, System.Globalization.DateTimeStyles.None,
-			out var result)) {
-
-			// タイムゾーンが設定されていないので念のため設定する
-			var d = result.AddHours(-9);
-			var jtc = TimeZoneInfo.ConvertTimeFromUtc(
-				new DateTime(d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second, DateTimeKind.Utc),
-				jstZone);
-			return jtc;
-		} else {
-			// なんか適当な時間かえす
-			return new DateTime(1970, 1, 1);
-		}
-	}
+			out var result) switch {
+				true => result,
+				_ => new(1970, 1, 1),
+			};
 
 	extension(Models.SureyomiChanModel source) {
 		public bool IsId => source.Id is { };
@@ -165,8 +155,8 @@ static class ModelsExtensions {
 			_ => Models.SureyomiChanDeleteType.None,
 		};
 		public string FormatBody() => Comment2Text(source.Comment);
-		public Models.SureyomiChanModel ToSureyomiChanModel(int threadNo, Models.ISureyomiChanInteraction interaction) => new(
-			threadNo: threadNo,
+		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
+			threadId: threadId,
 			resIndex: source.ResCount,
 			no: source.ResNoInt,
 			postTime: source.PostDateTime,
@@ -191,79 +181,6 @@ static class ModelsExtensions {
 		};
 	}
 
-	extension(Models.NijiuraChanThreadV1 source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public DateTime BumpedAtDateTime => NijiuraChanTime2Local(source.BumpedAt);
-	}
-
-	extension(Models.NijiuraChanReplyV1 source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public string FormatBody() => Comment2Text(source.Body);
-		public Models.SureyomiChanModel ToSureyomiChanModel(int threadNo, Models.ISureyomiChanInteraction interaction) => new(
-			threadNo: threadNo,
-			resIndex: source.Number,
-			no: source.Id,
-			postTime: source.CreatedAtDateTime,
-			email: "",
-			body: source.Body,
-			id: string.IsNullOrEmpty(source.PosterId) switch {
-				true => null,
-				_ => source.PosterId
-			},
-			deleteType: Models.SureyomiChanDeleteType.None,
-
-			images: source.ToImages(),
-
-			token: Utils.Util.Tokenize(source.FormatBody()),
-			interaction: interaction);
-		private IEnumerable<Models.SureyomiChanImage> ToImages() => source.Image switch {
-			string v when !string.IsNullOrEmpty(v) => [
-				new(Path.GetFileName(v), source.Image, source.Thumb switch {
-					{ } vv => vv,
-					_ => "",
-				})
-			],
-			_ => []
-		};
-	}
-
-	extension(Models.NijiuraChanThreadInternal source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public DateTime ExpiresAtDateTime => NijiuraChanTime2Local(source.ExpiresAt);
-	}
-
-	extension(Models.NijiuraChanPostInternal source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public string FormatBody() => Comment2Text(source.Body);
-		public Models.SureyomiChanModel ToSureyomiChanModel(int threadNo, Models.ISureyomiChanInteraction interaction) => new (
-			threadNo: threadNo,
-			resIndex: source.NumberInThread - 1,
-			no: source.Id,
-			postTime: source.CreatedAtDateTime,
-			email: "",
-			body: source.Body,
-			id: string.IsNullOrEmpty(source.PosterId) switch {
-				true => null,
-				_ => source.PosterId
-			},
-			deleteType: Models.SureyomiChanDeleteType.None,
-
-			images: source.ToImages(),
-
-			token: Utils.Util.Tokenize(source.FormatBody()),
-			interaction: interaction);
-
-		private IEnumerable<Models.SureyomiChanImage> ToImages() => source.Attachment switch {
-			{ } => source.Attachment.Path switch {
-				string v when !string.IsNullOrEmpty(v) => [
-						new(Path.GetFileName(v), source.Attachment.Path, source.Attachment.Thumbnail),
-					],
-				_ => []
-			},
-			_ => []
-		};
-	}
-
 	extension(Models.SureyomiChanDeleteType source) {
 		public string FormatString() => source switch {
 			Models.SureyomiChanDeleteType.DeleteFromOwner => "del",
@@ -271,6 +188,72 @@ static class ModelsExtensions {
 			Models.SureyomiChanDeleteType.SelfDelete => "selfdel",
 			_ => "",
 		};
+	}
+
+	extension(Models.NijiuraChanState source) {
+		public DateTime? ArchivedAtDateTime => source.ArchivedAt switch {
+			{ } v => NijiuraChanTime2Local(v),
+			_ => default(DateTime?),
+		};
+		public DateTime? ExpiresAtDateTime => source.ExpiresAt switch {
+			{ } v => NijiuraChanTime2Local(v),
+			_ => default(DateTime?),
+		};
+		public DateTime? ClosedAtDateTime => source.ClosedAt switch {
+			{ } v => NijiuraChanTime2Local(v),
+			_ => default(DateTime?),
+		};
+	}
+
+	extension(Models.NijiuraChanPost source) {
+		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
+		public string FormatBody() => Comment2Text(source.Body);
+
+		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
+			threadId: threadId,
+			resIndex: source.Sequence,
+			no: source.PostNo,
+			postTime: source.CreatedAtDateTime,
+			email: "",
+			body: RemoveUnicodePrivateChar(source.Body),
+			id: string.IsNullOrEmpty(source.DisplayId) switch {
+				true => null,
+				_ => source.DisplayId
+			},
+			deleteType: Models.SureyomiChanDeleteType.None,
+
+			images: source.ToImages(),
+
+			token: Utils.Util.Tokenize(source.FormatBody()),
+			interaction: interaction);
+
+		// 仕様として入っているaimgだけ今のところ除去する
+		private static string RemoveUnicodePrivateChar(string s) {
+			var ary = s.Select((x, i) => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(x) switch {
+				System.Globalization.UnicodeCategory.PrivateUse => default(int?),
+				_ => i
+			}).ToArray();
+			if(!ary.Any(x => x == default(int?))) {
+				return s;
+			}
+
+			var r = new StringBuilder();
+			foreach(var it in ary) {
+				if(it is { } i) {
+					r.Append(s[i]);
+				}
+			}
+			return r.ToString();
+		}
+
+		private IEnumerable<Models.SureyomiChanImage> ToImages()
+			=> source.Attachments
+				.Select(x => new Models.SureyomiChanImage(
+					Path.GetFileName(x.OriginalUrl),
+					x.OriginalUrl,
+					x.OriginalUrl))
+				.ToArray()
+				.AsReadOnly();
 	}
 
 	extension(Models.AttachmentObject _) {

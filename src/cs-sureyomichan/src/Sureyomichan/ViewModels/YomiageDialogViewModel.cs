@@ -23,7 +23,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	public record class DialogParams(
 		string UrlString,
 		Helpers.IApiUrl Url,
-		int ThreadNo,
+		Helpers.ThreadId ThreadId,
 		bool IsLatest,
 		Core.IConfigProxy Config,
 		Core.UiMessageMultiDispatcher Dispatcher,
@@ -31,6 +31,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		Core.AttachmentWriter AttachmentWriter,
 		Core.TegakiSaveStore Store,
 		Core.WebView2Proxy WebView,
+		Core.__NijiuraChanWebView2Proxy __NijiuraChanWebView,
 		Core.SureyomiChanNgProcesser Ng);
 	enum ProcessState {
 		Sucess,
@@ -105,15 +106,23 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				}
 			},
 			OnUpdateDieTime = (c, d) => {
-				var ts = d - c;
-				var tt = DateTime.Now.Add(ts); // 消滅時間表示はPCの時計を使用
-				this.ThreadDieText.Value = ts switch {
-					TimeSpan y when y.TotalSeconds < 0 => $"スレ消滅：{Math.Abs(ts.TotalSeconds):00}秒経過(消滅時間を過ぎました)",
-					TimeSpan y when 0 < y.Days => $"スレ消滅：{tt.ToString("MM/dd")}(あと{ts.ToString(@"dd\日hh\時\間")})",
-					TimeSpan y when 0 < y.Hours => $"スレ消滅：{tt.ToString("HH:mm")}(あと{ts.ToString(@"hh\時\間mm\分")})",
-					TimeSpan y when 0 < y.Minutes => $"スレ消滅：{tt.ToString("HH:mm")}(あと{ts.ToString(@"mm\分ss\秒")})",
-					_ => $"スレ消滅：{tt.ToString("HH:mm")}(あと{ts.ToString(@"ss\秒")})",
-				};
+				string text() {
+					if(!d.HasValue) {
+						return "無(永久スレ)";
+					}
+
+					var ts = d.Value - c;
+					var tt = DateTime.Now.Add(ts); // 消滅時間表示はPCの時計を使用
+					return ts switch {
+						TimeSpan y when y.TotalSeconds < 0 => $"{Math.Abs(ts.TotalSeconds):00}秒経過(消滅時間を過ぎました)",
+						TimeSpan y when 0 < y.Days => $"{tt.ToString("MM/dd")}(あと{ts.ToString(@"dd\日hh\時\間")})",
+						TimeSpan y when 0 < y.Hours => $"{tt.ToString("HH:mm")}(あと{ts.ToString(@"hh\時\間mm\分")})",
+						TimeSpan y when 0 < y.Minutes => $"{tt.ToString("HH:mm")}(あと{ts.ToString(@"mm\分ss\秒")})",
+						_ => $"{tt.ToString("HH:mm")}(あと{ts.ToString(@"ss\秒")})",
+					};
+				}
+
+				this.ThreadDieText.Value = $"スレ消滅：{text()}";
 			},
 			OnMaxRes = () => {
 				this.ThreadDieText.Value = "最大レス数に到達しました";
@@ -191,18 +200,18 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		if(this.api.Value != null) {
 			this.StopYomiage();
 			if(this.param is { }) {
-				this.param.Store.Clear(this.param.ThreadNo);
+				this.param.Store.Clear(this.param.ThreadId);
 				Utils.ImageUtil.ImageStore.Remove(
 					SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId),
-					this.param.ThreadNo);
+					this.param.ThreadId);
 			}
 		}
 	}
 
 
 	private bool StartYomiage(bool isLatest) {
-		Task<Models.NgResult> safeIsNgFromBody(int threadNo, Models.SureyomiChanModel model, Models.DifferenceHash? dhash)
-			=> this.param.Ng?.IsNgFromBody(threadNo, model, dhash) switch {
+		Task<Models.NgResult> safeIsNgFromBody(Helpers.ThreadId threadId, Models.SureyomiChanModel model, Models.DifferenceHash? dhash)
+			=> this.param.Ng?.IsNgFromBody(threadId, model, dhash) switch {
 				{ } v => v,
 				_ => Task.FromResult(Models.NgResult.Default),
 			};
@@ -219,7 +228,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			return false;
 		}
 
-		Utils.Logger.Instance.Info($"読み上げを開始します => {SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId)}, {this.param.ThreadNo}");
+		Utils.Logger.Instance.Info($"読み上げを開始します => {SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId)}, {this.param.ThreadId}");
 		var yomiage = new Core.Yomiage(this.param.Bouyomi, this.param.Config);
 		var prevResponse = default(Models.SureyomiChanResponse);
 		this.ThreadDieText.Value = "";
@@ -227,10 +236,10 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			api.Value = new Core.SureyomiChanApiLooper(
 				this.param.UrlString,
 				this.param.Url,
-				this.param.ThreadNo,
+				this.param.ThreadId,
 				this.uiMsgDispatcher,
 				this.param.Config,
-				this.param.WebView);
+				this.param.__NijiuraChanWebView);
 			{
 				var c = this.param.Config.Get();
 				yomiage.DoYomiageOnce(c.YomiageStarted, nameof(c.YomiageStarted));
@@ -256,13 +265,13 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 						var speak = new List<Models.SureyomiChanModel>();
 						var disp = new List<BindableSureyomi>();
 						var images = new List<byte[]>();
-						foreach(var it in x.NewReplies) {
+						foreach(var it in x.Response.NewReplies) {
 							var attachments = await it.Interaction.DownloadImages();
 							var isNg = false;
 							var body = it.ToSpeakText();
 							var dHash = attachments.FirstOrDefault()?.Hash;
 							foreach(var it2 in await Task.WhenAll(
-								safeIsNgFromBody(x.ThreadNo, it, dHash),
+								safeIsNgFromBody(x.Response.ThreadId, it, dHash),
 								safeIsNgFromImage(dHash),
 								delay(500))) {
 								isNg |= it2.IsNg;
@@ -285,35 +294,35 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 
 								if(attachments.Count() != 0) {
 									yomiImage(attachments);
-									await this.param.AttachmentWriter.Save(it, attachments);
+									await this.param.AttachmentWriter.Save(x.Info, it, attachments);
 								}
 								if(this.param.Config.Get().IsEnabledUpFile) {
-									_ = this.param.AttachmentWriter.DownloadShio(it);
+									_ = this.param.AttachmentWriter.DownloadShio(x.Info, it);
 								}
 							}
 							foreach(var ao in attachments) {
 								if(ao.ImageFileBytes is { }) {
 									Utils.ImageUtil.ImageStore.Insert(
 										SureyomiChanEnviroment.GetStaticString(this.param.Url.BoardId),
-										this.param.ThreadNo,
+										this.param.ThreadId,
 										ao.ImageName,
 										ao.ImageFileBytes);
 								}
 							}
 							disp.Add(new(it, attachments, isNg));
-							this.param.Store.Add(this.param.ThreadNo, it, isNg, attachments);
+							this.param.Store.Add(this.param.ThreadId, it, isNg, attachments);
 						}
 
-						await this.param.AttachmentWriter.UpdateThreadNo(x);
-						this.ProcessYomiage(x, prevResponse, yomiage);
-						if(x.SupportFeature.IsSupportThreadDie && !x.IsAlive) {
-							await this.param.AttachmentWriter.DeadThreadNo(x);
+						await this.param.AttachmentWriter.UpdateThreadNo(x.Info, x.Response);
+						this.ProcessYomiage(x.Response, prevResponse, yomiage);
+						if(x.Response.SupportFeature.IsSupportThreadDie && !x.Response.IsAlive) {
+							await this.param.AttachmentWriter.DeadThreadNo(x.Info, x.Response);
 						}
 
 						uiMsgDispatcher.DispatchNewRiplies(disp);
 					}
 					finally {
-						prevResponse = x;
+						prevResponse = x.Response;
 					}
 				},
 				skipToLast: isLatest,
@@ -347,7 +356,10 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				{ } v when v < current.Soudane => true,
 				_ => false,
 			};
-			bool isOld() => (current.DieTime - current.CurrentTime).TotalMilliseconds < this.param.Config.Get().YomiageOldTime;
+			bool isOld() => current.DieTime switch {
+				{ } v => (v - current.CurrentTime).TotalMilliseconds < this.param.Config.Get().YomiageOldTime,
+				_ => false,
+			};				
 
 			if(current.SupportFeature.IsSupportInspectSoudane && isSoudane()) {
 				yomiage.DoYomiage(config.YomiageSoudane);
@@ -419,12 +431,20 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	}
 
 	private void OnOpenFolder() {
-		if(this.param is { } && Utils.Util.GetSaveDirectoryPath(
-			this.param.Config.Get(),
-			this.param.Url.BoardId,
-			this.param.ThreadNo) is { } d
-			&& System.IO.Directory.Exists(d)) {
-		
+		string? path() {
+			if(!(this.param is { } p)) {
+				return null;
+			}
+			if(!(this.api.Value?.ThreadInfo is { } info)) {
+				return null;
+			}
+			return Utils.Util.GetSaveDirectoryPath(
+				p.Config.Get(),
+				info);
+		}
+
+		var d = path();
+		if(System.IO.Directory.Exists(d)) {
 			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(d) {
 				UseShellExecute = true
 			});

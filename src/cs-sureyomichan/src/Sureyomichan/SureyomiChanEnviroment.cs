@@ -17,12 +17,6 @@ internal static partial class SureyomiChanEnviroment {
 		CommandOpen,
 	];
 
-	public static IEnumerable<SureyomiChanBoardId> SupportBoards__ => [
-		SureyomiChanBoardId.FutabaImg,
-		SureyomiChanBoardId.NijiuraChanAimg,
-	];
-
-
 	public static int CopyDataTypeCommandArgs => 1;
 
 

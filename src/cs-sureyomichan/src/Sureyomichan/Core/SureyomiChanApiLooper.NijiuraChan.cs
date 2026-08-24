@@ -1,128 +1,86 @@
+using Haru.Kei.SureyomiChan.Helpers;
 using Haru.Kei.SureyomiChan.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reactive.Linq;
+using System.Security.Policy;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Haru.Kei.SureyomiChan.Core; 
 partial class SureyomiChanApiLooper {
 	class NijiuraChanApiWorker : IWorker {
+		private readonly NijiuraChanApi api;
 		private readonly IConfigProxy config;
-		private readonly string urlString;
-		private readonly int threadNo;
-		private readonly WebView2Proxy webView;
+		private readonly Helpers.IApiUrl url;
+		private readonly Helpers.ThreadId threadId;
+		private readonly __NijiuraChanWebView2Proxy webView;
 
-		public NijiuraChanApiWorker(string urlString, int threadNo, IConfigProxy config, WebView2Proxy webView) {
-			this.urlString = urlString;
-			this.threadNo = threadNo;
+		public NijiuraChanApiWorker(Helpers.IApiUrl url, Helpers.ThreadId threadNo, IConfigProxy config, __NijiuraChanWebView2Proxy webView) {
+			this.url = url;
+			this.threadId = threadNo;
 			this.config = config;
 
+			this.api = Utils.Singleton.Instance.NijiuraChanTsApi;
 			this.webView = webView;
 		}
 
-		public IObservable<SureyomiChanResponse> GetThread(int? latestResNo) {
-			var url = Utils.Singleton.Instance.NijiuraChanUrl.GenApiThread(this.threadNo, latestResNo);
-			return Observable.Return(url)
-				.ObserveOn(System.Reactive.Concurrency.ThreadPoolScheduler.Instance)
-				.Select(x => {
-					var nowTime = DateTime.Now;
-					var task = this.webView.__RequestApi(url);
-					task.Wait();
-					var json = task.Result;
-
-					IEnumerable<Models.NijiuraChanReplyV1> replies;
-					if(latestResNo is { }) {
-						var o = JsonSerializer.Deserialize<Models.NijiuraChanResponse<Models.NijiuraChanNewThreadDataV1>>(json);
-						replies = o?.Data?.Replies ?? Array.Empty<Models.NijiuraChanReplyV1>();
-					} else {
-						var o = JsonSerializer.Deserialize<Models.NijiuraChanResponse<Models.NijiuraChanThreadDataV1>>(json);
-						replies = o?.Data?.Replies ?? Array.Empty<Models.NijiuraChanReplyV1>();
-					}
-
-					return new Models.SureyomiChanResponse() {
-						BoardId = SureyomiChanBoardId.NijiuraChanAimg,
-						ThreadNo = threadNo,
-						IsAlive = true,
-						IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= (replies.LastOrDefault()?.Number ?? 0),
-						Soudane = 0,
-						CurrentTime = nowTime,
-						DieTime = nowTime.AddHours(1),
-						NewReplies = replies.Select(x => x.ToSureyomiChanModel(this.threadNo, new NijiuraChanInteraction(this.urlString, x, null, this.config))).ToArray() ?? new SureyomiChanModel[0],
-						SupportFeature = new NijiuraChanFeature(),
-					};
+		public IObservable<Models.SureyomiChanThreadInfo> GetThreadInfo()
+			/*
+			=> this.api.GetThreadInfoSerial($"{this.threadId}")
+				.Select(x => new Models.SureyomiChanThreadInfo() {
+					BoardId = this.url.BoardId,
+					ThreadId = this.threadId,
+					ThreadNo = x.BoardNo,
 				});
-		}
-	}
+			*/
+			=> Observable.FromAsync(async () => await this.api.__GetThreadInfoWithWebView(this.webView, $"{this.threadId}"))
+				.Select(x => new Models.SureyomiChanThreadInfo() {
+					BoardId = this.url.BoardId,
+					ThreadId = this.threadId,
+					ThreadNo = x.PostNo,
+				});
 
-
-	// 非公開API
-
-	class NijiuraChanInternalApiWorker : IWorker {
-		private readonly IConfigProxy config;
-		private readonly string urlString;
-		private readonly int threadNo;
-		private readonly WebView2Proxy webView;
-
-		public NijiuraChanInternalApiWorker(string urlString, int threadNo, IConfigProxy config, WebView2Proxy webView) {
-			this.urlString = urlString;
-			this.threadNo = threadNo;
-			this.config = config;
-
-			this.webView = webView;
-		}
-
-		public IObservable<SureyomiChanResponse> GetThread(int? latestResNo) {
-			static string getApi(int threadNo, int? latestResNo) {
-				return $"https://nijiurachan.net/api/thread/{threadNo}";
-			}
-
-			var url = getApi(this.threadNo, latestResNo);
-			return Observable.Return(url)
-				.ObserveOn(System.Reactive.Concurrency.ThreadPoolScheduler.Instance)
-				.Select(x => {
-					var json = "";
-					try {
-						var nowTime = DateTime.Now;
-						var task = this.webView.__RequestApi(url);
-						task.Wait();
-						json = task.Result;
-						var o = JsonSerializer.Deserialize<Models.NijiuraChanResponse<Models.NijiuraChanThreadInternalData>>(json);
-
-						IEnumerable<Models.NijiuraChanPostInternal> replies;
-						if(latestResNo is { } lno) {
-							replies = o?.Data?.Posts.Where(x => lno < x.Id).ToArray() ?? Array.Empty<Models.NijiuraChanPostInternal>();
-						} else {
-							replies = o?.Data?.Posts.Skip(1).ToArray() ?? Array.Empty<Models.NijiuraChanPostInternal>();
-						}
-
-						return new Models.SureyomiChanResponse() {
-							BoardId = SureyomiChanBoardId.NijiuraChanAimg,
-							ThreadNo = threadNo,
-							IsAlive = !o?.Data?.Thread.IsArchived ?? true,
-							IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= (replies.LastOrDefault()?.NumberInThread ?? 0),
-							Soudane = o?.Data?.Thread.SoudaneCount ?? 0,
-							CurrentTime = nowTime,
-							DieTime = o?.Data?.Thread.ExpiresAtDateTime ?? nowTime.AddHours(1),
-							NewReplies = replies.Select(x => x.ToSureyomiChanModel(this.threadNo, new NijiuraChanInternalInteraction(this.urlString, x, null, this.config))).ToArray(),
-							SupportFeature = new NijiuraChaninternalFeature(),
-						};
-					}
-					catch(JsonException _) {
-						throw new Exceptions.ApiInvalidJsonException(json);
-					}
+		public IObservable<Models.SureyomiChanResponse> GetThread(int? latestResNo) {
+			var nowTime = DateTime.Now;
+			/*
+			return this.api.GetThreadSerial($"{this.threadId}", latestResNo)
+				.Select(x => new Models.SureyomiChanResponse() {
+					BoardId = SureyomiChanBoardId.NijiuraChanAimg,
+					ThreadId = threadId,
+					IsAlive = x.ArchivedAt is null,
+					IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= x.ReplyCount,
+					Soudane = x.PostStates?.Where(y => y.Sequence == 0).FirstOrDefault()?.Reaction.Up ?? 0,
+					CurrentTime = nowTime,
+					DieTime = x.ExpiresAtDateTime,
+					NewReplies = x.NewPosts.Select(y => y.ToSureyomiChanModel(this.threadId, new NijiuraChanTsInteraction(y))).ToArray(),
+					LatestResNo = x.NewPosts.LastOrDefault()?.Sequence ?? latestResNo,
+					SupportFeature = new NijiuraChanTsFeature(),
+				});
+			*/
+			return Observable.FromAsync(async () => await this.api.__GetThreadWithWebView(this.webView, $"{this.threadId}", latestResNo))
+				.Select(x => new Models.SureyomiChanResponse() {
+					BoardId = SureyomiChanBoardId.NijiuraChanAimg,
+					ThreadId = threadId,
+					IsAlive = x.ArchivedAt is null,
+					IsMaxRes = SureyomiChanEnviroment.NijiuraChanMaxRes <= x.ReplyCount,
+					Soudane = x.PostStates?.Where(y => y.Sequence == 0).FirstOrDefault()?.Reaction.Up ?? 0,
+					CurrentTime = nowTime,
+					DieTime = x.ExpiresAtDateTime,
+					NewReplies = x.NewPosts.Select(y => y.ToSureyomiChanModel(this.threadId, new NijiuraChanInteraction(y))).ToArray(),
+					LatestResNo = x.NewPosts.LastOrDefault()?.Sequence ?? latestResNo,
+					SupportFeature = new NijiuraChanFeature(),
 				});
 		}
 	}
 }
+
 
 file class NijiuraChanFeature : ISureyomiChanFeature {
-	public bool IsSupportThreadOld => false;
-	public bool IsSupportThreadDie => false;
-	public bool IsSupportInspectSoudane => false;
-}
-
-file class NijiuraChaninternalFeature : ISureyomiChanFeature {
 	public bool IsSupportThreadOld => true;
 	public bool IsSupportThreadDie => true;
 	public bool IsSupportInspectSoudane => true;

@@ -27,15 +27,6 @@
         "js/futaba.js"
       ],
       "css": ["css/tegaki_save.css"]
-    },
-    {
-      "matches": [
-        "https://nijiurachan.net/pc/thread.php?id=*"
-      ],
-      "js": [
-        "js/nijiurachan.js"
-      ],
-      "css": ["css/tegaki_save.css"]
     }
   ],
   "permissions": [
@@ -54,8 +45,7 @@
       ],
       "matches": [
         "http://img.2chan.net/*",
-        "https://img.2chan.net/*",
-        "https://nijiurachan.net/*"
+        "https://img.2chan.net/*"
       ]
     }
   ],

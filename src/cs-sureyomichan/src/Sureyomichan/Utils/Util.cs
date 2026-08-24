@@ -1,3 +1,4 @@
+using LiteDB;
 using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Ja;
 using Lucene.Net.Analysis.Ja.Dict;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
@@ -23,13 +25,40 @@ namespace Haru.Kei.SureyomiChan.Utils;
 //
 
 static class Util {
+	class HttpStoreImpl /*: Models.IImageStore*/ {
+		private const string DbFile = "http.db";
+		private const string VersionTable = "version";
+		private const string CookieTable = "cookie";
+		private static readonly object lockObj = new();
+		private string __DbFile => Path.Combine(AppContext.BaseDirectory, DbFile);
+
+		public HttpStoreImpl() {}
+
+		public IEnumerable<int> Get(string board, Helpers.ThreadId threadId, string imageName) {
+			lock(lockObj) {
+				try {
+					using var db = new LiteDatabase(__DbFile);
+					return db.GetCollection<DbCookieObject>(CookieTable)
+						.Query()
+						.Select(x => 0)
+						.ToArray()
+						.AsReadOnly();
+				}
+				catch(LiteDB.LiteException e) {
+					Logger.Instance.Error(e);
+					return Array.Empty<int>();
+				}
+			}
+		}
+	}
+
 	/// <summary>UNIX時間(秒)から変換</summary>
 	/// <param name="t"></param>
 	/// <returns></returns>
 	public static DateTime FromUnixTimeSeconds(long t)
-		=> new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-			.AddSeconds(t)
-			.ToLocalTime();
+	=> new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+		.AddSeconds(t)
+		.ToLocalTime();
 
 	/// <summary>UNIX時間(ミリ秒)から変換</summary>
 	/// <param name="t"></param>
@@ -137,8 +166,12 @@ static class Util {
 		}
 	}
 
-	public static (SureyomiChanBoardId Board, int ThreadNo, bool IsLatest)? ParseCommandLine(string cmd) {
-		static (SureyomiChanBoardId, int, bool)? error(string cmd) {
+	public static (SureyomiChanBoardId Board, Helpers.ThreadId ThreadId, bool IsLatest)? ParseCommandLine(string cmd) {
+		static (SureyomiChanBoardId, Helpers.ThreadId, bool)? result((SureyomiChanBoardId Board, Helpers.ThreadId Thread) v, bool isLatest) {
+			Logger.Instance.Info($"コマンドラインを解析しました => {v.Board}, {v.Thread}, {isLatest}");
+			return (v.Board, v.Thread, isLatest);
+		}
+		static (SureyomiChanBoardId, Helpers.ThreadId, bool)? error(string cmd) {
 			Logger.Instance.Info($"コマンドラインは不正でした => {cmd}");
 			return null;
 		}
@@ -174,30 +207,54 @@ static class Util {
 			if(uri.Host == SureyomiChanEnviroment.CommandOpen) {
 				var p = uri.LocalPath.Split("/");
 				if(p.Length == 3) {
-					var board = SureyomiChanEnviroment.SupportBoards__.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
-						x => (SureyomiChanEnviroment.GetStaticString(x, SureyomiChanBoardItem.URiCommand) == p[1]) switch {
-							true => x,
-							false => null
-						}).FirstOrDefault(x => x != null);
-					if(board is null) {
-						return error(span.ToString());
-					}
-					var no = 0;
-					var latest = false;
+					static (SureyomiChanBoardId, Helpers.ThreadId)? parseType1(string p1, string p2) {
+						var board = new[] { SureyomiChanBoardId.FutabaImg }.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
+							x => (SureyomiChanEnviroment.GetStaticString(x, SureyomiChanBoardItem.URiCommand) == p1) switch {
+								true => x,
+								false => null
+							}).FirstOrDefault(x => x != null);
+						if(board is null) {
+							return default;
+						}
 
-					if(!uint.TryParse(p[2], out var uno)) {
-						return error(span.ToString());
+						if(!uint.TryParse(p2, out var uno)) {
+							return default;
+						}
+						return (board.Value, new((int)uno));
 					}
-					no = (int)uno;
-					if(1 < uri.Query.Length) {
-						foreach(var it in uri.Query.Substring(1).Split('&')) {
-							if($"{it}" == "latest") {
-								latest = true;
+					static (SureyomiChanBoardId, Helpers.ThreadId)? parseType2(string p1, string p2) {
+						var board = new[] { SureyomiChanBoardId.NijiuraChanAimg }.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
+							x => (SureyomiChanEnviroment.GetStaticString(x, SureyomiChanBoardItem.URiCommand) == p1) switch {
+								true => x,
+								false => null
+							}).FirstOrDefault(x => x != null);
+						if(board is null) {
+							return default;
+						}
+
+						if(!Regex.IsMatch(p2, "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.IgnoreCase)) {
+							return default;
+						}
+
+						return (board.Value, new(p2));
+					}
+					static bool isLatest(Uri uri) {
+						if(1 < uri.Query.Length) {
+							foreach(var it in uri.Query.Substring(1).Split('&')) {
+								if($"{it}" == "latest") {
+									return true;
+								}
 							}
 						}
+						return false;
 					}
-					Logger.Instance.Info($"コマンドラインを解析しました => {board}, {no}, {latest}");
-					return (board.Value, no, latest);
+
+					if(parseType1(p[1], p[2]) is { } v1) {
+						return result(v1, isLatest(uri));
+					}
+					if(parseType2(p[1], p[2]) is { } v2) {
+						return result(v2, isLatest(uri));
+					}
 				}
 			}
 		}
@@ -240,11 +297,11 @@ static class Util {
 		return r.AsReadOnly();
 	}
 
-	public static string GetSaveDirectoryPath(Models.Config config, SureyomiChanBoardId boardId, int threadNo) {
+	public static string GetSaveDirectoryPath(Models.Config config, Models.SureyomiChanThreadInfo threadInfo) {
 		var root = config.PathDwonloadValue;
 		var sb = new StringBuilder(config.SaveSubFolderName);
-		sb.Replace("$Board", $"{SureyomiChanEnviroment.GetStaticString(boardId)}");
-		sb.Replace("$Thread", $"{threadNo}");
+		sb.Replace("$Board", $"{SureyomiChanEnviroment.GetStaticString(threadInfo.BoardId)}");
+		sb.Replace("$Thread", $"{threadInfo.ThreadNo}");
 		var sub = sb.ToString();
 
 		return !string.IsNullOrWhiteSpace(sub) switch {
@@ -254,3 +311,12 @@ static class Util {
 	}
 }
 
+file class DbVersionObject {
+	public string Url { get; set; } = "";
+}
+
+file class DbCookieObject {
+	public string Url { get; set; } = "";
+	public string Name { get; set; } = "";
+	public string Value { get; set; } = "";
+}

@@ -8,8 +8,11 @@ using System.Threading.Tasks;
 namespace Haru.Kei.SureyomiChan.Core;
 partial class SureyomiChanApiLooper : IDisposable {
 	interface IWorker {
+		IObservable<Models.SureyomiChanThreadInfo> GetThreadInfo();
 		IObservable<Models.SureyomiChanResponse> GetThread(int? latestResNo);
 	}
+
+	public Models.SureyomiChanThreadInfo? ThreadInfo { get; private set; }
 
 	private readonly System.Threading.CountdownEvent condition = new(1);
 	private readonly UiMessageDispatcher uiMsgDispatcher;
@@ -19,14 +22,14 @@ partial class SureyomiChanApiLooper : IDisposable {
 	private IDisposable? runSubscriber = null;
 	private bool isDisposed = false;
 
-	public SureyomiChanApiLooper(string urlString, Helpers.IApiUrl url, int threadNo, UiMessageDispatcher uiMsgDispatcher, IConfigProxy config, WebView2Proxy webView) {
+	public SureyomiChanApiLooper(string urlString, Helpers.IApiUrl url, Helpers.ThreadId threadId, UiMessageDispatcher uiMsgDispatcher, IConfigProxy config, __NijiuraChanWebView2Proxy webView) {
 		this.uiMsgDispatcher = uiMsgDispatcher;
 		this.config = config;
 
 		this.cancel = new();
-		this.worker = url switch {
-			Helpers.FutabaUrl => new FutabaApiWorker(urlString, threadNo, this.config),
-			Helpers.NijiuraChanUrl => new NijiuraChanInternalApiWorker(urlString, threadNo, this.config, webView),
+		this.worker = url.BoardId switch {
+			SureyomiChanBoardId.FutabaImg => new FutabaApiWorker(url, threadId, this.config),
+			SureyomiChanBoardId.NijiuraChanAimg => new NijiuraChanApiWorker(url, threadId, this.config, webView),
 			_ => throw new NotSupportedException()
 		};
 		Utils.Logger.Instance.Info($"ApiLooperの作成完了 => url={url.GetType().Name}, worker={this.worker.GetType().Name}");
@@ -44,9 +47,25 @@ partial class SureyomiChanApiLooper : IDisposable {
 	}
 
 
-	public void Run(Func<Models.SureyomiChanResponse, bool, Task> callBack, bool skipToLast, int? latestResNo) {
+	public void Run(
+		Func<
+			(Models.SureyomiChanThreadInfo Info, Models.SureyomiChanResponse Response),
+			bool, Task
+		> callBack,
+		bool skipToLast,
+		int? latestResNo) {
+
 		this.runSubscriber = Observable.Create<int>(async o => {
 			await Task.Run(async () => {
+				static IObservable<Models.SureyomiChanThreadInfo> getInfo(
+					IWorker worker,
+					Models.SureyomiChanThreadInfo? info)
+						=> info switch {
+							{ } v => Observable.Return(v)
+								.ObserveOn(System.Reactive.Concurrency.ImmediateScheduler.Instance),
+							_ => worker.GetThreadInfo()
+						};
+
 				int? latestNo = latestResNo;
 				bool skip = skipToLast;
 				while (!this.cancel.IsCancellationRequested) {
@@ -54,15 +73,17 @@ partial class SureyomiChanApiLooper : IDisposable {
 					uiMsgDispatcher.DispatchBeginGetApi();
 
 					this.condition.Reset();
-					worker.GetThread(latestNo)
+					Observable.CombineLatest(
+						getInfo(worker, this.ThreadInfo),
+						worker.GetThread(latestNo),
+						(i, r) => (Info: i, Response: r))
 						.Subscribe(async x => {
 							try {
 								Utils.Logger.Instance.Info($"API呼び出しが成功");
 								uiMsgDispatcher.DispatchEndGetApi(true, x);
 
-								if(x.NewReplies.LastOrDefault() is { } it) {
-									latestNo = it.No;
-								}
+								this.ThreadInfo = x.Info;
+								latestNo = x.Response.LatestResNo;
 
 								await callBack(x, skip);
 								skip = false;
