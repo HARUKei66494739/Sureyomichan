@@ -28,24 +28,7 @@ static class ModelsExtensions {
 		return s3;
 	}
 
-	private static DateTime NijiuraChanTime2Local(string time) {
-		if(DateTime.TryParseExact(time, "yyyy-MM-dd HH:mm:ss",
-			null, System.Globalization.DateTimeStyles.None,
-			out var result)) {
-
-			// タイムゾーンが設定されていないので念のため設定する
-			var d = result.AddHours(-9);
-			var jtc = TimeZoneInfo.ConvertTimeFromUtc(
-				new DateTime(d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second, DateTimeKind.Utc),
-				jstZone);
-			return jtc;
-		} else {
-			// なんか適当な時間かえす
-			return new DateTime(1970, 1, 1);
-		}
-	}
-
-	private static DateTime NijiuraChanTime2LocalTs(string time)
+	private static DateTime NijiuraChanTime2Local(string time)
 		=> DateTime.TryParse(time,
 			null, System.Globalization.DateTimeStyles.None,
 			out var result) switch {
@@ -198,79 +181,6 @@ static class ModelsExtensions {
 		};
 	}
 
-	extension(Models.NijiuraChanThreadV1 source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public DateTime BumpedAtDateTime => NijiuraChanTime2Local(source.BumpedAt);
-	}
-
-	extension(Models.NijiuraChanReplyV1 source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public string FormatBody() => Comment2Text(source.Body);
-		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
-			threadId: threadId,
-			resIndex: source.Number,
-			no: source.Id,
-			postTime: source.CreatedAtDateTime,
-			email: "",
-			body: source.Body,
-			id: string.IsNullOrEmpty(source.PosterId) switch {
-				true => null,
-				_ => source.PosterId
-			},
-			deleteType: Models.SureyomiChanDeleteType.None,
-
-			images: source.ToImages(),
-
-			token: Utils.Util.Tokenize(source.FormatBody()),
-			interaction: interaction);
-		private IEnumerable<Models.SureyomiChanImage> ToImages() => source.Image switch {
-			string v when !string.IsNullOrEmpty(v) => [
-				new(Path.GetFileName(v), source.Image, source.Thumb switch {
-					{ } vv => vv,
-					_ => "",
-				})
-			],
-			_ => []
-		};
-	}
-
-	extension(Models.NijiuraChanThreadInternal source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public DateTime ExpiresAtDateTime => NijiuraChanTime2Local(source.ExpiresAt);
-	}
-
-	extension(Models.NijiuraChanPostInternal source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
-		public string FormatBody() => Comment2Text(source.Body);
-		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new (
-			threadId: threadId,
-			resIndex: source.NumberInThread - 1,
-			no: source.Id,
-			postTime: source.CreatedAtDateTime,
-			email: "",
-			body: source.Body,
-			id: string.IsNullOrEmpty(source.PosterId) switch {
-				true => null,
-				_ => source.PosterId
-			},
-			deleteType: Models.SureyomiChanDeleteType.None,
-
-			images: source.ToImages(),
-
-			token: Utils.Util.Tokenize(source.FormatBody()),
-			interaction: interaction);
-
-		private IEnumerable<Models.SureyomiChanImage> ToImages() => source.Attachment switch {
-			{ } => source.Attachment.Path switch {
-				string v when !string.IsNullOrEmpty(v) => [
-						new(Path.GetFileName(v), source.Attachment.Path, source.Attachment.Thumbnail),
-					],
-				_ => []
-			},
-			_ => []
-		};
-	}
-
 	extension(Models.SureyomiChanDeleteType source) {
 		public string FormatString() => source switch {
 			Models.SureyomiChanDeleteType.DeleteFromOwner => "del",
@@ -282,24 +192,24 @@ static class ModelsExtensions {
 
 	extension(Models.NijiuraChanState source) {
 		public DateTime? ArchivedAtDateTime => source.ArchivedAt switch {
-			{ } v => NijiuraChanTime2LocalTs(v),
+			{ } v => NijiuraChanTime2Local(v),
 			_ => default,
 		};
-		public DateTime ExpiresAtDateTime => NijiuraChanTime2LocalTs(source.ExpiresAt);
+		public DateTime ExpiresAtDateTime => NijiuraChanTime2Local(source.ExpiresAt);
 		public DateTime? ClosedAtDateTime => source.ClosedAt switch {
-			{ } v => NijiuraChanTime2LocalTs(v),
+			{ } v => NijiuraChanTime2Local(v),
 			_ => default,
 		};
 	}
 
 	extension(Models.NijiuraChanPost source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2LocalTs(source.CreatedAt);
+		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
 		public string FormatBody() => Comment2Text(source.Body);
 
 		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
 			threadId: threadId,
 			resIndex: source.Sequence,
-			no: source.BoardNo,
+			no: source.PostNo,
 			postTime: source.CreatedAtDateTime,
 			email: "",
 			body: RemoveUnicodePrivateChar(source.Body),
