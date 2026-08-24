@@ -28,24 +28,7 @@ static class ModelsExtensions {
 		return s3;
 	}
 
-	private static DateTime NijiuraChanTime2Local(string time) {
-		if(DateTime.TryParseExact(time, "yyyy-MM-dd HH:mm:ss",
-			null, System.Globalization.DateTimeStyles.None,
-			out var result)) {
-
-			// タイムゾーンが設定されていないので念のため設定する
-			var d = result.AddHours(-9);
-			var jtc = TimeZoneInfo.ConvertTimeFromUtc(
-				new DateTime(d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second, DateTimeKind.Utc),
-				jstZone);
-			return jtc;
-		} else {
-			// なんか適当な時間かえす
-			return new DateTime(1970, 1, 1);
-		}
-	}
-
-	private static DateTime NijiuraChanTime2LocalTs(string time)
+	private static DateTime NijiuraChanTime2Local(string time)
 		=> DateTime.TryParse(time,
 			null, System.Globalization.DateTimeStyles.None,
 			out var result) switch {
@@ -209,18 +192,18 @@ static class ModelsExtensions {
 
 	extension(Models.NijiuraChanState source) {
 		public DateTime? ArchivedAtDateTime => source.ArchivedAt switch {
-			{ } v => NijiuraChanTime2LocalTs(v),
+			{ } v => NijiuraChanTime2Local(v),
 			_ => default,
 		};
-		public DateTime ExpiresAtDateTime => NijiuraChanTime2LocalTs(source.ExpiresAt);
+		public DateTime ExpiresAtDateTime => NijiuraChanTime2Local(source.ExpiresAt);
 		public DateTime? ClosedAtDateTime => source.ClosedAt switch {
-			{ } v => NijiuraChanTime2LocalTs(v),
+			{ } v => NijiuraChanTime2Local(v),
 			_ => default,
 		};
 	}
 
 	extension(Models.NijiuraChanPost source) {
-		public DateTime CreatedAtDateTime => NijiuraChanTime2LocalTs(source.CreatedAt);
+		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
 		public string FormatBody() => Comment2Text(source.Body);
 
 		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
