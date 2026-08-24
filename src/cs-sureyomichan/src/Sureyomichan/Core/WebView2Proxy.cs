@@ -186,6 +186,96 @@ function __runNgPlugins(base64) {{
 }
 
 
+// nijiurachan読み上げ用仮置き
+class __NijiuraChanWebView2Proxy {
+	// CORS迂回のため許可されたドメインを開く
+	// private static readonly string NijiuraChanURL = @"https://nijiurachan.net/";
+	private static readonly string NijiuraChanURL = @"https://api.nijiurachan.net/";
+
+	private bool isInitialized = false;
+	private readonly Microsoft.Web.WebView2.Wpf.WebView2 webView2;
+
+	public event EventHandler? Initialized;
+
+	// WebView2Proxyの設定更新は再起動が必要
+	public __NijiuraChanWebView2Proxy(
+		Microsoft.Web.WebView2.Wpf.WebView2 webView2,
+		Models.Config currentConfig) {
+
+		this.webView2 = webView2;
+
+		// CoreWebView2初期化
+		this.webView2.CoreWebView2InitializationCompleted += this.OnWebViewInitialization;
+		Observable.Return(0)
+			.Delay(TimeSpan.FromMilliseconds(1))
+			.ObserveOn(Reactive.Bindings.UIDispatcherScheduler.Default)
+			.Subscribe(async _ => {
+				var env = await CoreWebView2Environment.CreateAsync();
+				await webView2.EnsureCoreWebView2Async(env);
+			});
+	}
+
+	private async void OnBootNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e) {
+		this.webView2.NavigationCompleted -= this.OnBootNavigationCompleted;
+		await this.webView2.CoreWebView2.ExecuteScriptAsync(@$"
+function __fromBase64(b) {{
+	return  new TextDecoder()
+		.decode(Uint8Array.fromBase64(b));
+}}
+
+function __toBase64(s) {{
+	return new TextEncoder()
+		.encode(s)
+		.toBase64();
+}}");
+	}
+
+	private async void OnWebViewInitialization(object? sender, CoreWebView2InitializationCompletedEventArgs e) {
+		this.isInitialized = e.IsSuccess;
+
+		Utils.Logger.Instance.Info($"CoreWebView2(nijiurachan.net)の初期化が終わりました => IsSuccess={e.IsSuccess}");
+		if(this.isInitialized) {
+			this.webView2.NavigationCompleted += this.OnBootNavigationCompleted;
+			this.webView2.CoreWebView2.Navigate(NijiuraChanURL);
+		}
+	}
+
+
+	public async Task<string> __RequestApi(string url, string action="GET") {
+
+
+		var task = await Utils.Util.AwaitObserver(
+			Observable.Return(url)
+				.ObserveOn(Reactive.Bindings.UIDispatcherScheduler.Default)
+				.Select(async x => {
+					var r = await this.webView2.CoreWebView2.ExecuteScriptAsync($@"
+{{
+    const xmlHttpApi = new XMLHttpRequest();    
+    xmlHttpApi.open('{action}', '{url}', false);
+    xmlHttpApi.send(null);
+
+	__toBase64(xmlHttpApi.responseText);
+}}
+");
+					if(r == "null") {
+						return "";
+					}
+
+					return Encoding.UTF8.GetString(
+						Convert.FromBase64String(
+							FormatScriptResult(r)));
+				}), default);
+		if(task is { }) {
+			return await task;
+		} else {
+			return await Task.FromResult("");
+		}
+	}
+
+	private static string FormatScriptResult(string s)
+		=> new(s.AsSpan().Slice(1, s.Length - 2));
+}
+
 file class RunPluginParams : Models.JsonObject {
 	[JsonPropertyName("threadNo")]
 	[JsonInclude]

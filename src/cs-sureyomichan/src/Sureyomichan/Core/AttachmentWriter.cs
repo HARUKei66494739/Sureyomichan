@@ -65,10 +65,9 @@ class AttachmentWriter {
 
 		};
 	}
-
 	public async Task InitThreadNo() {
 		var text = Encoding.UTF8.GetBytes($"{this.config.Get().ChangeThreadNoTxtText}");
-		var tasks = SureyomiChanEnviroment.SupportBoards__.Select(x => {
+		var tasks = new SureyomiChanBoardId[] { SureyomiChanBoardId.FutabaImg, SureyomiChanBoardId.NijiuraChanAimg }.Select(x => {
 			var textFileName = SureyomiChanEnviroment.GetStaticString(x, SureyomiChanBoardItem.ThreadNoFileName);
 			Utils.Logger.Instance.Info($"{textFileName}を初期化");
 			return File.WriteAllBytesAsync(
@@ -385,7 +384,7 @@ class AttachmentWriter {
 			tegakiHtmlPath,
 			Encoding.UTF8.GetBytes(this.ToHtml(src())));
 		*/
-		await Task.Yield();
+	await Task.Yield();
 	}
 
 	private string ToHtml(string? src) {

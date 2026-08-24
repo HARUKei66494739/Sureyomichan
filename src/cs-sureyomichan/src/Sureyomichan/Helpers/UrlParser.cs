@@ -98,28 +98,11 @@ class FutabaUrl : IApiUrl {
 
 class NijiuraChanUrl : IApiUrl {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
-	public string GenUrlThread(ThreadId thread) => $"https://nijiurachan.net/pc/thread.php?id={thread.ThreadNo}";
-	public ThreadId? ParseThreadNo(string url) {
-		var m = Regex.Match(url, @$"https://nijiurachan\.net/pc/thread\.php\?id=([0-9]+)");
-		if (!m.Success) {
-			return null;
-		}
-
-		if (!int.TryParse(m.Groups[1].Value, out var no)) {
-			return null;
-		}
-
-		return new(no);
-	}
-}
-
-class NijiuraChanTsUrl : IApiUrl {
-	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChan__Ts;
-	public string GenUrlThread(ThreadId thread) => $"https://staging.nijiurachan.net/b/ai2/thread/{thread}";
+	public string GenUrlThread(ThreadId thread) => $"https://nijiurachan.net/b/aimg/thread/{thread}";
 	public ThreadId? ParseThreadNo(string url) {
 		var m = Regex.Match(
 			url,
-			@$"https://staging\.nijiurachan\.net/b/ai2/thread/([a-f0-9]{{8}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{12}})",
+			@$"https://nijiurachan\.net/b/aimg/thread/([a-f0-9]{{8}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{12}})",
 			RegexOptions.IgnoreCase);
 		if(!m.Success) {
 			return null;

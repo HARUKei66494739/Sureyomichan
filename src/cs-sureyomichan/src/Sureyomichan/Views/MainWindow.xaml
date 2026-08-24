@@ -52,7 +52,20 @@
                 </i:EventTrigger>
             </i:Interaction.Triggers>
         </wv2:WebView2>
+        <!-- nijiurachan API呼び出し用 -->
+        <!-- 新APIのCloudflareの制限がstagingから変わってるので暫定とする -->
+        <wv2:WebView2
+            Width="1"
+            Height="1"
+            Visibility="Hidden">
 
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="Loaded">
+                    <ri:EventToReactiveCommand Command="{Binding __NijiurachanWebViewLoadedCommand, Mode=OneWay}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </wv2:WebView2>
+        
         <Grid Visibility="{Binding ConfigPageVisibility.Value, Mode=OneWay}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />

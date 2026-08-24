@@ -143,7 +143,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 			const int right = 6;
 
 			var fileName = obj.FileName;
-			if(model.Interaction.BoardId != SureyomiChanBoardId.NijiuraChan__Ts) {
+			if(model.Interaction.BoardId != SureyomiChanBoardId.NijiuraChanAimg) {
 				return fileName;
 			}
 

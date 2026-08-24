@@ -31,6 +31,7 @@ class SureyomiChanResponse {
 	public required DateTime DieTime { get; init; }
 	/// <summary>スレ文に入っているそうだね</summary>
 	public required int Soudane { get; init; }
+	public required int? LatestResNo { get; init; }
 	public required IEnumerable<SureyomiChanModel> NewReplies { get; init; }
 	public required ISureyomiChanFeature SupportFeature { get; init; }
 }

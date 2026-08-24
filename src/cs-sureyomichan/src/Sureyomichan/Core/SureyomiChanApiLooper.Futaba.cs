@@ -43,6 +43,7 @@ partial class SureyomiChanApiLooper {
 					CurrentTime = x.NowDateTime,
 					DieTime = x.DieDateTime,
 					NewReplies = x.Res.Select(x => x.ToSureyomiChanModel(this.threadId, new FutabaInteraction(this.urlString, x, this.api, this.config))).ToArray(),
+					LatestResNo = x.Res.LastOrDefault()?.ResNoInt ?? latestResNo,
 					SupportFeature = new FutabaFeature(),
 				});
 		}

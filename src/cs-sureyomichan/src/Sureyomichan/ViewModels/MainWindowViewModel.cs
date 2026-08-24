@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
@@ -65,8 +66,10 @@ class MainWindowViewModel : BindableBase {
 	public ReactiveCommandSlim<RoutedEventArgs> LoadedCommand { get; } = new();
 	public ReactiveCommandSlim ClosedCommand { get; } = new();
 	public ReactiveCommandSlim<RoutedEventArgs> WebViewLoadedCommand { get; } = new();
+	// 仮置き
+	public ReactiveCommandSlim<RoutedEventArgs> __NijiurachanWebViewLoadedCommand { get; } = new();
 
-
+	
 
 	public ReactiveCommandSlim OpenConfigCommand { get; } = new();
 	public ReactiveCommandSlim SaveConfigCommand { get; } = new();
@@ -82,7 +85,6 @@ class MainWindowViewModel : BindableBase {
 	public MainWindowViewModel(IDialogService dialogService) {
 		this.dialogService = dialogService;
 		this.FutabaUrl = Utils.Singleton.Instance.FutabaUrl;
-		this.NijiuraChanUrl = Utils.Singleton.Instance.NijiuraChanUrl;
 		this.NijiuraChanTsUrl = Utils.Singleton.Instance.NijiuraChanTsUrl;
 		this.attachmentWriter = new(config: this.config, uiDispatcher: this.uiDispatcher);
 		this.bouyomi = new(Utils.Singleton.Instance.HttpClient, this.uiDispatcher, this.config);
@@ -111,6 +113,12 @@ class MainWindowViewModel : BindableBase {
 		this.LoadedCommand.Subscribe(x => this.OnLoaded(x));
 		this.ClosedCommand.Subscribe(_ => this.OnClosed());
 		this.WebViewLoadedCommand.Subscribe(x => this.OnWebViewLoaded(x));
+		this.__NijiurachanWebViewLoadedCommand.Subscribe(x => {
+			if(x.Source is WebView2 wv2) {
+				Utils.Logger.Instance.Info("WebView2(nijiurachan.net)が初期化されました");
+				this.__niijiurachanEdge = new(wv2, config.Get());
+			}
+		});
 
 		this.OpenConfigCommand.Subscribe(_ => this.OnOpenConfig());
 		this.SaveConfigCommand.Subscribe(_ => this.OnSaveConfig());
@@ -130,12 +138,12 @@ class MainWindowViewModel : BindableBase {
 	private readonly Core.BouyomiChan bouyomi;
 	private readonly Core.TegakiSaveStore tegakiSaveStore = new();
 	private readonly Helpers.IApiUrl FutabaUrl;
-	private readonly Helpers.IApiUrl NijiuraChanUrl;
 	private readonly Helpers.IApiUrl NijiuraChanTsUrl;
 
 	public SnackbarMessageQueue SnackbarMessageQueue { get; } = new();
 	private Core.SureyomiChanNgProcesser? ng;
 	private Core.WebView2Proxy? edge;
+	private Core.__NijiuraChanWebView2Proxy? __niijiurachanEdge;
 	private string prevUrl = "";
 	private nint hwnd;
 	private object viewToken = new();
@@ -250,7 +258,7 @@ class MainWindowViewModel : BindableBase {
 	private bool StartYomiage(SureyomiChanBoardId board, Helpers.ThreadId threadId, bool latest) {
 		var url = board switch {
 			{ } v when v == SureyomiChanBoardId.FutabaImg => Utils.Singleton.Instance.FutabaUrl,
-			{ } v when v == SureyomiChanBoardId.NijiuraChanAimg => Utils.Singleton.Instance.NijiuraChanUrl,
+			{ } v when v == SureyomiChanBoardId.NijiuraChanAimg => Utils.Singleton.Instance.NijiuraChanTsUrl,
 			_ => null,
 		};
 		if(url is { } api) {
@@ -263,7 +271,6 @@ class MainWindowViewModel : BindableBase {
 	private bool StartYomiage(string url, bool latest) {
 		Helpers.IApiUrl? apiUrl = url switch {
 			string s when this.FutabaUrl.IsValidUrl(s) => this.FutabaUrl,
-			string s when this.NijiuraChanUrl.IsValidUrl(s) => this.NijiuraChanUrl,
 			string s when this.NijiuraChanTsUrl.IsValidUrl(s) => this.NijiuraChanTsUrl,
 			_ => null
 		};
@@ -278,6 +285,10 @@ class MainWindowViewModel : BindableBase {
 	private bool StartYomiage(Helpers.IApiUrl url, Helpers.ThreadId threadId, bool latest) {
 		if(this.edge == null) {
 			Utils.Logger.Instance.Error($"！！整合性エラーWebViewが初期化されていません！！");
+			return false;
+		}
+		if(this.__niijiurachanEdge == null) {
+			Utils.Logger.Instance.Error($"！！整合性エラーWebView(nijiurachan.net)が初期化されていません！！");
 			return false;
 		}
 		if(this.ng == null) {
@@ -309,6 +320,7 @@ class MainWindowViewModel : BindableBase {
 					AttachmentWriter: this.attachmentWriter,
 					Store: this.tegakiSaveStore,
 					WebView: this.edge,
+					__NijiuraChanWebView: this.__niijiurachanEdge,
 					Ng: this.ng
 				)
 			}

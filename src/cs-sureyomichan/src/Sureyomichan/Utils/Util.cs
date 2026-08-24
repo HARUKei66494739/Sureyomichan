@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
@@ -207,7 +208,7 @@ static class Util {
 				var p = uri.LocalPath.Split("/");
 				if(p.Length == 3) {
 					static (SureyomiChanBoardId, Helpers.ThreadId)? parseType1(string p1, string p2) {
-						var board = new[] { SureyomiChanBoardId.FutabaImg, SureyomiChanBoardId.NijiuraChanAimg }.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
+						var board = new[] { SureyomiChanBoardId.FutabaImg }.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
 							x => (SureyomiChanEnviroment.GetStaticString(x, SureyomiChanBoardItem.URiCommand) == p1) switch {
 								true => x,
 								false => null
@@ -222,7 +223,7 @@ static class Util {
 						return (board.Value, new((int)uno));
 					}
 					static (SureyomiChanBoardId, Helpers.ThreadId)? parseType2(string p1, string p2) {
-						var board = new[] { SureyomiChanBoardId.NijiuraChan__Ts }.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
+						var board = new[] { SureyomiChanBoardId.NijiuraChanAimg }.Select<SureyomiChanBoardId, SureyomiChanBoardId?>(
 							x => (SureyomiChanEnviroment.GetStaticString(x, SureyomiChanBoardItem.URiCommand) == p1) switch {
 								true => x,
 								false => null

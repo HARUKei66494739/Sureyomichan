@@ -50,38 +50,8 @@ class FutabaInteraction(string url, Models.__FutabaResData source, Helpers.Futab
 	}
 }
 
-class NijiuraChanInteraction(Models.NijiuraChanReplyV1 source) : Models.ISureyomiChanInteraction {
-	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
-	public bool IsSupportSendDel => false;
-	public bool IsSupportDeleteRes => false;
-
-	public async Task<bool> DeleteResAction()
-		=> await Task.FromResult(false);
-
-	public async Task<bool> SendDelAction()
-		=> await Task.FromResult(false);
-
-	public async Task<IEnumerable<Models.AttachmentObject>> DownloadImages()
-		=> await NijiuraChanUtil.DownloadImages(source.Image, source.Thumb, null);
-}
-
-class NijiuraChanInternalInteraction(Models.NijiuraChanPostInternal source) : Models.ISureyomiChanInteraction {
-	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
-	public bool IsSupportSendDel => false;
-	public bool IsSupportDeleteRes => false;
-
-	public async Task<bool> DeleteResAction()
-		=> await Task.FromResult(false);
-
-	public async Task<bool> SendDelAction()
-		=> await Task.FromResult(false);
-
-	public async Task<IEnumerable<Models.AttachmentObject>> DownloadImages()
-		=> await NijiuraChanUtil.DownloadImages(source.Attachment?.Path, source.Attachment?.Thumbnail, source.Attachment?.IsOekaki);
-}
-
 class NijiuraChanTsInteraction(Models.NijiuraChanPost source) : Models.ISureyomiChanInteraction {
-	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChan__Ts;
+	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
 	public bool IsSupportSendDel => false;
 	public bool IsSupportDeleteRes => false;
 
