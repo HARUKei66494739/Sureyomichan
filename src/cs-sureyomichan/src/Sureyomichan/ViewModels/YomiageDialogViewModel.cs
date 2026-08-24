@@ -106,15 +106,23 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				}
 			},
 			OnUpdateDieTime = (c, d) => {
-				var ts = d - c;
-				var tt = DateTime.Now.Add(ts); // 消滅時間表示はPCの時計を使用
-				this.ThreadDieText.Value = ts switch {
-					TimeSpan y when y.TotalSeconds < 0 => $"スレ消滅：{Math.Abs(ts.TotalSeconds):00}秒経過(消滅時間を過ぎました)",
-					TimeSpan y when 0 < y.Days => $"スレ消滅：{tt.ToString("MM/dd")}(あと{ts.ToString(@"dd\日hh\時\間")})",
-					TimeSpan y when 0 < y.Hours => $"スレ消滅：{tt.ToString("HH:mm")}(あと{ts.ToString(@"hh\時\間mm\分")})",
-					TimeSpan y when 0 < y.Minutes => $"スレ消滅：{tt.ToString("HH:mm")}(あと{ts.ToString(@"mm\分ss\秒")})",
-					_ => $"スレ消滅：{tt.ToString("HH:mm")}(あと{ts.ToString(@"ss\秒")})",
-				};
+				string text() {
+					if(!d.HasValue) {
+						return "無(永久スレ)";
+					}
+
+					var ts = d.Value - c;
+					var tt = DateTime.Now.Add(ts); // 消滅時間表示はPCの時計を使用
+					return ts switch {
+						TimeSpan y when y.TotalSeconds < 0 => $"{Math.Abs(ts.TotalSeconds):00}秒経過(消滅時間を過ぎました)",
+						TimeSpan y when 0 < y.Days => $"{tt.ToString("MM/dd")}(あと{ts.ToString(@"dd\日hh\時\間")})",
+						TimeSpan y when 0 < y.Hours => $"{tt.ToString("HH:mm")}(あと{ts.ToString(@"hh\時\間mm\分")})",
+						TimeSpan y when 0 < y.Minutes => $"{tt.ToString("HH:mm")}(あと{ts.ToString(@"mm\分ss\秒")})",
+						_ => $"{tt.ToString("HH:mm")}(あと{ts.ToString(@"ss\秒")})",
+					};
+				}
+
+				this.ThreadDieText.Value = $"スレ消滅：{text()}";
 			},
 			OnMaxRes = () => {
 				this.ThreadDieText.Value = "最大レス数に到達しました";
@@ -348,7 +356,10 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				{ } v when v < current.Soudane => true,
 				_ => false,
 			};
-			bool isOld() => (current.DieTime - current.CurrentTime).TotalMilliseconds < this.param.Config.Get().YomiageOldTime;
+			bool isOld() => current.DieTime switch {
+				{ } v => (v - current.CurrentTime).TotalMilliseconds < this.param.Config.Get().YomiageOldTime,
+				_ => false,
+			};				
 
 			if(current.SupportFeature.IsSupportInspectSoudane && isSoudane()) {
 				yomiage.DoYomiage(config.YomiageSoudane);

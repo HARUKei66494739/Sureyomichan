@@ -28,7 +28,7 @@ class SureyomiChanResponse {
 	public required bool IsAlive { get; init; }
 	public required bool IsMaxRes { get; init; }
 	public required DateTime CurrentTime { get; init; }
-	public required DateTime DieTime { get; init; }
+	public required DateTime? DieTime { get; init; }
 	/// <summary>スレ文に入っているそうだね</summary>
 	public required int Soudane { get; init; }
 	public required int? LatestResNo { get; init; }

@@ -51,7 +51,7 @@ class NijiuraChanState : JsonObject {
 
 	[JsonPropertyName("expiresAt")]
 	[JsonInclude]
-	public string ExpiresAt { get; private set; } = "";
+	public string? ExpiresAt { get; private set; }
 
 	[JsonPropertyName("isPermanent")]
 	[JsonInclude]

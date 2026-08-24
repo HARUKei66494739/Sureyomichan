@@ -193,12 +193,15 @@ static class ModelsExtensions {
 	extension(Models.NijiuraChanState source) {
 		public DateTime? ArchivedAtDateTime => source.ArchivedAt switch {
 			{ } v => NijiuraChanTime2Local(v),
-			_ => default,
+			_ => default(DateTime?),
 		};
-		public DateTime ExpiresAtDateTime => NijiuraChanTime2Local(source.ExpiresAt);
+		public DateTime? ExpiresAtDateTime => source.ExpiresAt switch {
+			{ } v => NijiuraChanTime2Local(v),
+			_ => default(DateTime?),
+		};
 		public DateTime? ClosedAtDateTime => source.ClosedAt switch {
 			{ } v => NijiuraChanTime2Local(v),
-			_ => default,
+			_ => default(DateTime?),
 		};
 	}
 
