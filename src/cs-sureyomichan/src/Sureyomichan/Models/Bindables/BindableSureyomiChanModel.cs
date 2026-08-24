@@ -138,23 +138,29 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		bool isNg
 		) {
 
-		static string getViewFileName(SureyomiChanModel model, AttachmentObject obj) {
-			const int left = 6;
-			const int right = 6;
+		static string getViewFileName(SureyomiChanModel model, AttachmentObject obj)
+			=> obj.FileName;
+		/* 
+			 * aimgのfile名が長かった時に用意した実装
+			 * 今は使っていない
+			static string getViewFileName(SureyomiChanModel model, AttachmentObject obj) {
+				const int left = 6;
+				const int right = 6;
 
-			var fileName = obj.FileName;
-			if(model.Interaction.BoardId != SureyomiChanBoardId.NijiuraChanAimg) {
-				return fileName;
+				var fileName = obj.FileName;
+				if(model.Interaction.BoardId != SureyomiChanBoardId.NijiuraChanAimg) {
+					return fileName;
+				}
+
+				var name = Path.GetFileNameWithoutExtension(fileName);
+				var ext = Path.GetExtension(fileName);
+				var span = name.AsSpan();
+				return $"{span[..left]}…{span[^right..]}{ext}";
 			}
-
-			var name = Path.GetFileNameWithoutExtension(fileName);
-			var ext = Path.GetExtension(fileName);
-			var span = name.AsSpan();
-			return $"{span[..left]}…{span[^right..]}{ext}";
-		}
+			*/
 
 
-		AttachmentObject? attachment = attachments.FirstOrDefault();
+			AttachmentObject? attachment = attachments.FirstOrDefault();
 		this.ResIndex = new ReactivePropertySlim<int>(initialValue: model.ResIndex);
 		this.No = new ReactivePropertySlim<string>(initialValue: FormatNo(model));
 		this.PostTime = new ReactivePropertySlim<string>(initialValue: model.FormatDateTime());
