@@ -278,6 +278,7 @@ class MainWindowViewModel : BindableBase {
 			return this.StartYomiage(apiUrl, threadId, latest);
 		} else {
 			Utils.Logger.Instance.Info($"サポートされていないURLです url=>{url}");
+			this.EnqueueErrorMessage($"サポートされていないURLです");
 			return false;
 		}
 	}

@@ -1071,7 +1071,7 @@
                 <TextBox
                     Grid.Column="0" Grid.ColumnSpan="3"
                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                    material:HintAssist.Hint="スレッドのURLを入力"
+                    material:HintAssist.Hint="スレッドのURLを入力（対応する板はimgとaimgです）"
                     Text="{Binding Url.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     />
                 <Button
@@ -1142,7 +1142,7 @@
                 Grid.Column="0"
                 Grid.Row="0"
                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                material:HintAssist.Hint="スレッドのURLを入力"
+                material:HintAssist.Hint="スレッドのURLを入力（対応する板はimgとaimgです）"
                 Text="{Binding Url.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 />
             <Button
