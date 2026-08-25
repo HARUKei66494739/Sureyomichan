@@ -102,12 +102,12 @@ class NijiuraChanUrl : IApiUrl {
 	public ThreadId? ParseThreadNo(string url) {
 		var m = Regex.Match(
 			url,
-			@$"https://nijiurachan\.net/b/aimg/thread/([a-f0-9]{{8}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{12}})",
+			@$"https://nijiurachan\.net/(b|mix)/aimg/thread/([a-f0-9]{{8}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{4}}-[a-f0-9]{{12}})",
 			RegexOptions.IgnoreCase);
 		if(!m.Success) {
 			return null;
 		}
 
-		return new(m.Groups[1].Value);
+		return new(m.Groups[2].Value);
 	}
 }

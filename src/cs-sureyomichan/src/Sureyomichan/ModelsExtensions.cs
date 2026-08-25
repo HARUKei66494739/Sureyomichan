@@ -1,4 +1,3 @@
-using Haru.Kei.SureyomiChan.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
@@ -209,7 +208,7 @@ static class ModelsExtensions {
 		public DateTime CreatedAtDateTime => NijiuraChanTime2Local(source.CreatedAt);
 		public string FormatBody() => Comment2Text(source.Body);
 
-		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.ISureyomiChanInteraction interaction) => new(
+		public Models.SureyomiChanModel ToSureyomiChanModel(Helpers.ThreadId threadId, Models.NijiuraChanPostState? state, Models.ISureyomiChanInteraction interaction) => new(
 			threadId: threadId,
 			resIndex: source.Sequence,
 			no: source.PostNo,
@@ -220,7 +219,11 @@ static class ModelsExtensions {
 				true => null,
 				_ => source.DisplayId
 			},
-			deleteType: Models.SureyomiChanDeleteType.None,
+			deleteType: state switch {
+				// public以外は暫定自分で削除した扱いとする
+				{ } v when(v.Status != Models.NijiuraChanPostState.StatePublic) => Models.SureyomiChanDeleteType.SelfDelete,
+				_ => Models.SureyomiChanDeleteType.None,
+			},
 
 			images: source.ToImages(),
 

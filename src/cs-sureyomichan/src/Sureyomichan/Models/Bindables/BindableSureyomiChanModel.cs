@@ -13,16 +13,22 @@ using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
-namespace Haru.Kei.SureyomiChan.Models.Bindables; 
+namespace Haru.Kei.SureyomiChan.Models.Bindables;
 
 class BindableSureyomiChanModel : INotifyPropertyChanged {
+	private record class ImageRecord(string Key, ImageObject Image);
+
 	public class ImageItem(
 		SureyomiChanBoardId boardId,
 		Helpers.ThreadId threadId,
 		AttachmentObject? attachment,
-		bool? hasImage = null) : INotifyPropertyChanged {
+		bool? hasImage = null,
+		bool subItem = false) : INotifyPropertyChanged {
 
 		public event PropertyChangedEventHandler? PropertyChanged;
+
+		public IReadOnlyReactiveProperty<bool> SubItem { get; } = new ReactivePropertySlim<bool>(initialValue: subItem);
+
 		private readonly string imageKey = attachment switch {
 			{ } v when v.ImageFileBytes is { } && !string.IsNullOrEmpty(v.ImageName) => v.ImageName,
 			_ => ""
@@ -32,16 +38,23 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 			_ => false,
 		};
 
-		private WeakReference<ImageObject>? image = null;
-
+		private WeakReference<ImageRecord>? image = null;
 		public ImageObject? Image {
 			get {
+				var cachedImage = default(ImageRecord?);
+				this.image?.TryGetTarget(out cachedImage);
+
 				if(!this.has) {
+					if(cachedImage is { }) {
+						this.image = null;
+						this.PropertyChanged?.Invoke(this, new(nameof(Image)));
+					}
 					return null;
 				}
 
-				if(this.image?.TryGetTarget(out var io) ?? false) {
-					return io;
+				if((cachedImage is { }) && (cachedImage.Key == this.imageKey)) {
+					// ここは画像キャッシュなのでPropertyChangedは発火しない
+					return cachedImage.Image;
 				}
 
 				var ib = Utils.ImageUtil.ImageStore.Get(
@@ -49,11 +62,13 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 					threadId,
 					this.imageKey);
 				if(ib is null) {
+					this.PropertyChanged?.Invoke(this, new(nameof(Image)));
 					return null;
 				}
 
 				var r = LoadImage(this.imageKey, ib);
-				this.image = new WeakReference<ImageObject>(r);
+				this.image = new(new(this.imageKey, r));
+				this.PropertyChanged?.Invoke(this, new(nameof(Image)));
 				return r;
 			}
 		}
@@ -84,30 +99,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 	public IReadOnlyReactiveProperty<Visibility> ImageErrorVisibility { get; }
 	public IReadOnlyReactiveProperty<string?> ImageName { get; }
 
-	private WeakReference<ImageObject>? image = null;
-	public ImageObject? Image {
-		get {
-			if(!this.hasImage) {
-				return null;
-			}
-
-			if(this.image?.TryGetTarget(out var io) ?? false) {
-				return io;
-			}
-
-			var ib = Utils.ImageUtil.ImageStore.Get(
-				SureyomiChanEnviroment.GetStaticString(this.Model.Interaction.BoardId),
-				this.Model.ThreadId,
-				this.imageKey);
-			if(ib is null) {
-				return null;
-			}
-
-			var r = LoadImage(this.imageKey, ib);
-			this.image = new WeakReference<ImageObject>(r);
-			return r;
-		}
-	}
+	public IReadOnlyReactiveProperty<ImageItem?> Image {  get; }
 	public ReactiveCollection<ImageItem> SubImages { get; } = [];
 
 
@@ -130,7 +122,6 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 	private ReactivePropertySlim<bool> IsNg { get; }
 	private ReactivePropertySlim<Models.SureyomiChanDeleteType> DeleteType { get; }
 	private readonly bool hasImage;
-	private readonly string imageKey;
 
 	public BindableSureyomiChanModel(
 		SureyomiChanModel model,
@@ -160,7 +151,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 			*/
 
 
-			AttachmentObject? attachment = attachments.FirstOrDefault();
+		AttachmentObject? attachment = attachments.FirstOrDefault();
 		this.ResIndex = new ReactivePropertySlim<int>(initialValue: model.ResIndex);
 		this.No = new ReactivePropertySlim<string>(initialValue: FormatNo(model));
 		this.PostTime = new ReactivePropertySlim<string>(initialValue: model.FormatDateTime());
@@ -174,7 +165,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		});
 		this.hasImage = !isNg && attachment?.ImageFileBytes != null;
 		this.ImageVisibility = new ReactivePropertySlim<Visibility>(initialValue: this.hasImage switch {
-			true=> Visibility.Visible,
+			true => Visibility.Visible,
 			_ => Visibility.Collapsed,
 		});
 		this.ImageErrorVisibility = new ReactivePropertySlim<Visibility>(initialValue: attachment switch {
@@ -184,12 +175,16 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 			},
 			_ => Visibility.Collapsed,
 		});
-		this.imageKey = attachment switch {
-			{ } v when v.ImageFileBytes is { } && !string.IsNullOrEmpty(v.ImageName) => v.ImageName,
-			_ => ""
-		};
+		this.Image = new ReactivePropertySlim<ImageItem?>(initialValue: attachments.FirstOrDefault() switch {
+			{ } v when v.ImageFileBytes != null => new(model.Interaction.BoardId, model.ThreadId, v),
+			_ => null
+		});
 		foreach(var it in attachments.Skip(1)) {
-			SubImages.Add(new(model.Interaction.BoardId, model.ThreadId, it));
+			SubImages.Add(new(
+				model.Interaction.BoardId,
+				model.ThreadId, 
+				it,
+				subItem: true));
 		}
 
 		this.IsNg = new(initialValue: isNg);
@@ -277,15 +272,6 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		var s3 = System.Net.WebUtility.HtmlDecode(s2);
 
 		return s3;
-	}
-
-	private static ImageObject LoadImage(string imageName, byte[] imageBytes) {
-		return Path.GetExtension(imageName).ToLower() switch {
-			".png" => Utils.ImageUtil.LoadPng(imageBytes),
-			".webp" => Utils.ImageUtil.LoadWebp(imageBytes),
-			".gif" => Utils.ImageUtil.LoadGif(imageBytes),
-			_ => new ImageObject(BitmapFrame.Create(new MemoryStream(imageBytes)))
-		};
 	}
 }
 

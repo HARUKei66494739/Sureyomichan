@@ -71,7 +71,12 @@ partial class SureyomiChanApiLooper {
 					Soudane = x.PostStates?.Where(y => y.Sequence == 0).FirstOrDefault()?.Reaction.Up ?? 0,
 					CurrentTime = nowTime,
 					DieTime = x.ExpiresAtDateTime,
-					NewReplies = x.NewPosts.Select(y => y.ToSureyomiChanModel(this.threadId, new NijiuraChanInteraction(y))).ToArray(),
+					NewReplies = x.NewPosts.Select(y => y.ToSureyomiChanModel(
+						this.threadId,
+						x.PostStates?.Where(z => y.Sequence == z.Sequence).FirstOrDefault(),
+						new NijiuraChanInteraction(y)))
+							.ToArray()
+							.AsReadOnly(),
 					LatestResNo = x.NewPosts.LastOrDefault()?.Sequence ?? latestResNo,
 					SupportFeature = new NijiuraChanFeature(),
 				});
