@@ -137,6 +137,7 @@ class NijiuraChanPost : JsonObject {
 class NijiuraChanPostState {
 	// statusプロパティのとりえる値がよくわからないので一旦定数定義しておく
 	public static readonly string StatePublic = "public";
+	public static readonly string StateUnavailable = "unavailable";
 
 	[JsonPropertyName("seq")]
 	[JsonInclude]
