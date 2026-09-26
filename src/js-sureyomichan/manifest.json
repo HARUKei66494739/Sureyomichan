@@ -30,12 +30,16 @@
     },
     {
       "matches": [
-        "https://nijiurachan.net/pc/thread.php?id=*"
+        "https://nijiurachan.net/b/aimg/thread/*",
+        "https://nijiurachan.net/mix/aimg/thread/*"
       ],
       "js": [
         "js/nijiurachan.js"
       ],
-      "css": ["css/tegaki_save.css"]
+      "css": [
+        "css/tegaki_save.css",
+        "css/nijiurachan.css"
+      ]
     }
   ],
   "permissions": [
