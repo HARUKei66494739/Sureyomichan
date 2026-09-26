@@ -25,6 +25,37 @@
         <SolidColorBrush x:Key="MailTextBrush" Color="{StaticResource MaterialBlue600}" />
         <SolidColorBrush x:Key="IdTextBrush" Color="{StaticResource MaterialRed600}" />
 
+        <DataTemplate x:Key="ImageSet">
+            <Border>
+                <Viewbox
+                    Stretch="UniformToFill"
+                    MaxWidth="200"
+                    Margin="0"
+                    >
+                    <Image
+                        Source="{Binding Image.ImageSource}"
+                        RenderOptions.EdgeMode="Aliased"
+                        RenderOptions.BitmapScalingMode="Fant">
+                        <Image.CacheMode>
+                            <BitmapCache RenderAtScale="1" />
+                        </Image.CacheMode>
+                        <i:Interaction.Behaviors>
+                            <b:ImageBehavior Source="{Binding Image, Mode=OneWay}" />
+                        </i:Interaction.Behaviors>
+                    </Image>
+
+                    <i:Interaction.Triggers>
+                        <i:DataTrigger Binding="{Binding Image}" Value="{x:Null}" Comparison="Equal">
+                            <i:ChangePropertyAction PropertyName="Margin" Value="0,0,16,0" />
+                        </i:DataTrigger>
+                        <i:DataTrigger Binding="{Binding SubItem.Value}" Value="True" Comparison="Equal">
+                            <i:ChangePropertyAction PropertyName="MaxWidth" Value="120" />
+                            <i:ChangePropertyAction PropertyName="MaxHeight" Value="120" />
+                        </i:DataTrigger>
+                    </i:Interaction.Triggers>
+                </Viewbox>
+            </Border>
+        </DataTemplate>
 
     </UserControl.Resources>
     
@@ -95,7 +126,7 @@
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="16,8,16,0">
+                            <Border x:Name="__listboxItem" Padding="16,8,16,0">
                                 <Grid>
                                     <material:Card
                                         Visibility="{Binding ResVisibility.Value, Mode=OneWay}"
@@ -186,6 +217,7 @@
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
                                                 <TextBlock
                                                     Grid.Column="0"
@@ -194,32 +226,13 @@
                                                     Text="{Binding ImageName.Value, Mode=OneWay}"
                                                     TextWrapping="Wrap" />
 
-                                                <Viewbox
+                                                <ContentPresenter
                                                     Grid.Column="0"
                                                     Grid.Row="1"
-                                                    Visibility="{Binding ImageVisibility.Value, Mode=OneWay}"
-                                                    Stretch="UniformToFill"
-                                                    MaxWidth="200"
-                                                    Margin="0"
-                                                    >
-                                                    <Image
-                                                        Source="{Binding Image.ImageSource}"
-                                                        RenderOptions.EdgeMode="Aliased"
-                                                        RenderOptions.BitmapScalingMode="Fant">
-                                                        <Image.CacheMode>
-                                                            <BitmapCache RenderAtScale="1" />
-                                                        </Image.CacheMode>
-                                                        <i:Interaction.Behaviors>
-                                                            <b:ImageBehavior Source="{Binding Image, Mode=OneWay}" />
-                                                        </i:Interaction.Behaviors>
-                                                    </Image>
-
-                                                    <i:Interaction.Triggers>
-                                                        <i:DataTrigger Binding="{Binding Image}" Value="{x:Null}" Comparison="Equal">
-                                                            <i:ChangePropertyAction PropertyName="Margin" Value="0,0,16,0" />
-                                                        </i:DataTrigger>
-                                                    </i:Interaction.Triggers>
-                                                </Viewbox>
+                                                    Visibility="{Binding DataContext.ImageVisibility.Value, Mode=OneWay, ElementName=__listboxItem}"
+                                                    Content="{Binding Image.Value}"
+                                                    ContentTemplate="{StaticResource ImageSet}"
+                                                    />
 
                                                 <Border
                                                     Grid.Column="0"
@@ -244,6 +257,35 @@
                                                     Style="{StaticResource MaterialDesignBody2TextBlock}"
                                                     Text="{Binding Body.Value, Mode=OneWay}"
                                                     TextWrapping="Wrap" />
+
+                                                <ListBox
+                                                    Grid.Column="0"
+                                                    Grid.ColumnSpan="2"
+                                                    Grid.Row="2"
+                                                    Visibility="{Binding ImageVisibility.Value, Mode=OneWay}"
+                                                    ItemsSource="{Binding SubImages}"
+                                                    ScrollViewer.CanContentScroll="False"
+                                                    material:ListBoxItemAssist.ShowSelection="False">
+                                                    <ListBox.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel
+                                                                IsItemsHost="True"
+                                                                HorizontalAlignment="Left" />
+                                                        </ItemsPanelTemplate>
+                                                    </ListBox.ItemsPanel>
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border>
+                                                                <ContentPresenter
+                                                                    Grid.Column="0"
+                                                                    Grid.Row="1"
+                                                                    Content="{Binding}"
+                                                                    ContentTemplate="{StaticResource ImageSet}"
+                                                                    />
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
                                             </Grid>
                                         </Grid>
                                     </material:Card>

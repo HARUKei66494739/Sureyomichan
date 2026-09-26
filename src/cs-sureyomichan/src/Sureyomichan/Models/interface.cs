@@ -13,7 +13,7 @@ interface IAttachmentData {
 }
 
 internal interface IImageStore {
-	public byte[]? Get(string board, int threadNo, string imageName);
-	public void Insert(string board, int threadNo, string imageName, byte[] imageBytes);
-	public void Remove(string board, int threadNo);
+	public byte[]? Get(string board, Helpers.ThreadId threadId, string imageName);
+	public void Insert(string board, Helpers.ThreadId threadId, string imageName, byte[] imageBytes);
+	public void Remove(string board, Helpers.ThreadId threadId);
 }

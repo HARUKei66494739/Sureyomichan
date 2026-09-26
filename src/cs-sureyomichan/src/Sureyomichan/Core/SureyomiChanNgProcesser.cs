@@ -7,7 +7,7 @@ namespace Haru.Kei.SureyomiChan.Core;
 
 class SureyomiChanNgProcesser(WebView2Proxy webView2, ConfigProxy config) {
 
-	public async Task<Models.NgResult> IsNgFromBody(int threadNo, Models.SureyomiChanModel m, Models.DifferenceHash? dhash) {
+	public async Task<Models.NgResult> IsNgFromBody(Helpers.ThreadId threadId, Models.SureyomiChanModel m, Models.DifferenceHash? dhash) {
 		var con = config.Get();
 		if(m.HasId && con.NonReadId) {
 			return await Task.FromResult(ToResult(true));
@@ -17,7 +17,7 @@ class SureyomiChanNgProcesser(WebView2Proxy webView2, ConfigProxy config) {
 			return await Task.FromResult(ToResult(true));
 		}
 
-		var ret = await webView2.RunPlugin(threadNo, m, dhash?.Value);
+		var ret = await webView2.RunPlugin(threadId, m, dhash?.Value);
 		if(ret is { }) {
 			Action<string> func = ret.IsError switch {
 				true => Utils.Logger.Instance.Error,

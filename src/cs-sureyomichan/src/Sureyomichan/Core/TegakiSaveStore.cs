@@ -8,9 +8,12 @@ namespace Haru.Kei.SureyomiChan.Core;
 
 /// <summary>tegaki_saveのtegakiグローバル変数をWebViewとやりとりするためのinterface</summary>
 public interface ITegakiSaveStore {
-	/// <summary>tegakiグローバル変数を表すjson</summary>
-	/// <returns></returns>
+	/// <summary>thread-noの板用</summary>
+	/// <returns>tegakiグローバル変数を表すjson</returns>
 	public string GetStore(int resNo);
+	/// <summary>thread-idの板用</summary>
+	/// <returns>tegakiグローバル変数を表すjson</returns>
+	public string GetStore(string resId);
 }
 
 class TegakiSaveStore : ITegakiSaveStore {
@@ -22,18 +25,21 @@ class TegakiSaveStore : ITegakiSaveStore {
 	}
 
 	private readonly object lockObj = new();
-	private Dictionary<int, List<Models.TegakiSaveResData>> TegakiData { get; } = new();
+	private Dictionary<string, List<Models.TegakiSaveResData>> TegakiData { get; } = new();
 
 
-	string ITegakiSaveStore.GetStore(int resNo) {
-		return new StoreObject() {
-			TegakiData = ToTegakiSaveModels(resNo),
+	string ITegakiSaveStore.GetStore(int resNo)
+		=> new StoreObject() {
+			TegakiData = ToTegakiSaveModels(new(resNo)),
 		}.ToString();
-	}
+	string ITegakiSaveStore.GetStore(string resId)
+		=> new StoreObject() {
+			TegakiData = ToTegakiSaveModels(new(resId)),
+		}.ToString();
 
-	public List<Models.TegakiSaveResData> ToTegakiSaveModels(int threadNo) {
+	public List<Models.TegakiSaveResData> ToTegakiSaveModels(Helpers.ThreadId resId) {
 		lock(this.lockObj) {
-			return this.TegakiData.TryGetValue(threadNo, out var it) switch {
+			return this.TegakiData.TryGetValue($"{resId}", out var it) switch {
 				true => [.. it],
 				_ => []
 			};
@@ -41,13 +47,13 @@ class TegakiSaveStore : ITegakiSaveStore {
 	}
 
 
-	public void Add(int threadNo, Models.SureyomiChanModel m, bool isNg, IEnumerable<Models.AttachmentObject> attachments) {
+	public void Add(Helpers.ThreadId threadId, Models.SureyomiChanModel m, bool isNg, IEnumerable<Models.AttachmentObject> attachments) {
 		lock(this.lockObj) {
 			var model = m.ToTegakiSaveModel(isNg: isNg, attachments: attachments);
-			if(this.TegakiData.TryGetValue(threadNo, out var lt)) {
+			if(this.TegakiData.TryGetValue($"{threadId}", out var lt)) {
 				lt.Add(model);
 			} else {
-				this.TegakiData.Add(threadNo, new() { model });
+				this.TegakiData.Add($"{threadId}", new() { model });
 			}
 		}
 	}
@@ -65,9 +71,9 @@ class TegakiSaveStore : ITegakiSaveStore {
 		}
 	}
 
-	public void Clear(int resNo) {
+	public void Clear(Helpers.ThreadId resId) {
 		lock(this.lockObj) {
-			this.TegakiData.Remove(resNo);
+			this.TegakiData.Remove($"{resId}");
 		}
 	}
 }

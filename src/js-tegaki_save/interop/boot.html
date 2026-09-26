@@ -63,6 +63,7 @@ function loadModule(modules, file) {
 }
 
 function runPlugins(param) {
+  const p = structuredClone(param);
   // 処理結果返り値
   // isStop：処理の中断判定…返した側で処理を中断すべきかどうかの判定値（true：処理を中断させる、false：処理続行）
   // isError：エラーの有無 （true：エラー発生、エラーの種類によっては処理を続行しない 返した側で判断する）
@@ -74,23 +75,27 @@ function runPlugins(param) {
   // (各JSファイル内にある処理を実行する)
   let i = 0;
   try {
-    for(;i < tegakiPlugins[param.point].length;i++) {
+    for(;i < tegakiPlugins[p.point].length;i++) {
       // 該当関数がある場合のみ実行
       // （pnameがread、execNameがbeforeExecuteの場合、「tegakiPlugins.read[i].module.beforeExecute」を実行）
-      if(tegakiPlugins[param.point][i][param.execName]) {
-        pr = tegakiPlugins[param.point][i][param.execName](param);
-        r.resultValue = pr.resultValue;
+      if(tegakiPlugins[p.point][i][p.execName]) {
+        pr = tegakiPlugins[p.point][i][p.execName](p);
+        if(pr.resultValue && pr.resultValue.length) {
+          r.resultValue
+            = p.res.com
+            = pr.resultValue;
+        }
         // 中断の場合、中断して処理を抜ける
         if(pr.isStop) {
           r.isStop = true;
-          r.message = tegakiPlugins[param.point][i].name + "で処理中断";
+          r.message = tegakiPlugins[p.point][i].name + "で処理中断";
           break;
         }
       }
     }
   } catch(e){
     r.isError = true;
-    r.message = tegakiPlugins[param.point][i].name + "でエラー 内容：" + e.name + ":" + e.message;
+    r.message = tegakiPlugins[p.point][i].name + "でエラー 内容：" + e.name + ":" + e.message;
   }
   return r;
 }

@@ -37,12 +37,49 @@ class ImageBehavior : Behavior<Image> {
 	}
 
 	private void OnLoaded(object sender, RoutedEventArgs e) {
-		if(this.Source?.AnimationSource is Timeline tl) {
+		static Timeline nop(object source) {
+			var animation = new ObjectAnimationUsingKeyFrames();
+			animation.KeyFrames.Add(new DiscreteObjectKeyFrame() {
+				KeyTime = TimeSpan.Zero,
+				Value = source,
+			});
+			animation.Duration = new(TimeSpan.FromMicroseconds(1));
+
+			var storyboard = new Storyboard();
+			Storyboard.SetTargetProperty(
+				animation,
+				new PropertyPath(System.Windows.Controls.Image.SourceProperty));
+			storyboard.Children.Add(animation);
+			return storyboard;
+		}
+
+		void apply(Timeline tl) {
 			Storyboard.SetTarget(this.AssociatedObject, tl);
 			Storyboard.SetTargetProperty(tl, new PropertyPath(Image.SourceProperty));
 
 			storyboard.Children.Add(tl);
 			storyboard.Begin(this.AssociatedObject);
+		}
+
+		// 以前のものがある場合削除
+		if(0 < this.storyboard.Children.Count) {
+			this.storyboard.Stop();
+			this.storyboard.Children.Clear();
+		}
+
+		if(this.Source == null) {
+			return;
+		}
+
+		// アニメがない場合ダミーを入れる
+		if(this.Source.AnimationSource is null){
+			apply(nop(this.Source.ImageSource));
+			return;
+		}
+
+		if(this.Source.AnimationSource is Timeline tl) {
+			apply(tl);
+			return;
 		}
 	}
 
@@ -50,6 +87,7 @@ class ImageBehavior : Behavior<Image> {
 		if(sender is Image img) {
 			img.Unloaded -= OnUnloaded;
 			this.storyboard.Stop();
+			this.storyboard.Children.Clear();
 		}
 	}
 }

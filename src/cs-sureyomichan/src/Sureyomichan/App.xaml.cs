@@ -25,6 +25,7 @@ public partial class App : PrismApplication {
 		System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 		Reactive.Bindings.UIDispatcherScheduler.Initialize();
 
+		Utils.Logger.Instance.Info($"スレ詠みちゃんが起動しました => build={SureyomiChanEnviroment.Build}");
 		var r = Utils.Singleton.Instance.StartupSequence.Begin();
 		if(!r.IsFirstStart) {
 			Utils.Singleton.Instance.StartupSequence.End(0);
