@@ -735,10 +735,7 @@
                                         <RowDefinition MinHeight="56" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition MinHeight="56" />
-                                        <!--
-                                        <RowDefinition Height="Auto" />
                                         <RowDefinition MinHeight="56" />
-                                        -->
                                     </Grid.RowDefinitions>
 
                                     <TextBlock
@@ -774,6 +771,21 @@
                                         Grid.Column="1"
                                         Grid.Row="2"
                                         Content="{Binding YomiageSoudane}"
+                                        ContentTemplate="{StaticResource YomiageComponentKey}"
+                                        />
+
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Grid.Row="3"
+                                        Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                        VerticalAlignment="Top"
+                                        Text="アンケート通知"
+                                        TextWrapping="Wrap"
+                                        />
+                                    <ContentPresenter
+                                        Grid.Column="1"
+                                        Grid.Row="3"
+                                        Content="{Binding YomiagePoll}"
                                         ContentTemplate="{StaticResource YomiageComponentKey}"
                                         />
                                     <!--

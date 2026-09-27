@@ -57,6 +57,26 @@
             </Border>
         </DataTemplate>
 
+        <Style x:Key="ContentListBox" BasedOn="{StaticResource MaterialDesignListBox}"  TargetType="{x:Type ListBox}">
+            <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
+            <Setter Property="material:ListBoxItemAssist.ShowSelection" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBox}">
+                        <Border
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            ClipToBounds="True"
+                            SnapsToDevicePixels="true">
+                            <ItemsPresenter ClipToBounds="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                    </ControlTemplate>
+
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </UserControl.Resources>
     
     
@@ -133,7 +153,7 @@
                                         Padding="16,8,16,8"
                                         Background="{DynamicResource PrimaryHueLightBrush}"
                                         Foreground="{DynamicResource PrimaryHueLightForegroundBrush}">
-                                        <Grid>
+                                        <Grid x:Name="__cardContent">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="8" />
@@ -211,7 +231,7 @@
                                             </Grid>
                                             <Grid Grid.Row="2">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" MaxWidth="200" />
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
                                                 <Grid.RowDefinitions>
@@ -230,6 +250,7 @@
                                                     Grid.Column="0"
                                                     Grid.Row="1"
                                                     Visibility="{Binding DataContext.ImageVisibility.Value, Mode=OneWay, ElementName=__listboxItem}"
+                                                    Margin="0,0,12,0"
                                                     Content="{Binding Image.Value}"
                                                     ContentTemplate="{StaticResource ImageSet}"
                                                     />
@@ -251,21 +272,76 @@
                                                         />
                                                 </Border>
 
-                                                <TextBlock
+                                                <Grid
                                                     Grid.Column="1"
-                                                    Grid.Row="0" Grid.RowSpan="2"
-                                                    Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                    Text="{Binding Body.Value, Mode=OneWay}"
-                                                    TextWrapping="Wrap" />
+                                                    Grid.Row="0" Grid.RowSpan="2"                                                    
+                                                    HorizontalAlignment="Stretch"
+                                                    MinWidth="128"
+                                                    >
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock
+                                                        Grid.Row="0"
+                                                        Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                        Text="{Binding Body.Value, Mode=OneWay}"
+                                                        TextWrapping="Wrap" />
+
+                                                    <ListBox
+                                                        Grid.Row="1"
+                                                        Style="{StaticResource ContentListBox}"
+                                                        Visibility="{Binding ExtendItemVisibility.Value, Mode=OneWay}"
+                                                        Margin="0,12,0,0"
+                                                        ItemsSource="{Binding ExtendItems}">
+                                                        <ListBox.ItemContainerStyle>
+                                                            <Style BasedOn="{StaticResource MaterialDesignListBoxItem}" TargetType="ListBoxItem">
+                                                                <Setter Property="Padding" Value="0"/>
+                                                            </Style>
+                                                        </ListBox.ItemContainerStyle>
+                                                        <ListBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border>
+                                                                    <GroupBox
+                                                                        Style="{StaticResource MaterialDesignGroupBox}"
+                                                                        MinWidth="200"
+                                                                        Margin="0">
+                                                                        <GroupBox.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <TextBlock
+                                                                                    Grid.Row="0"
+                                                                                    Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                                                    Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Text="{Binding Title.Value, Mode=OneWay}"
+                                                                                    />
+                                                                                <Button
+                                                                                    Style="{StaticResource MaterialDesignFlatButton}"
+                                                                                    Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}"
+                                                                                    Command="{Binding LinkClickCommand, Mode=OneWay}">
+                                                                                    <material:PackIcon Kind="Web" />
+                                                                                </Button>
+                                                                            </StackPanel>
+                                                                        </GroupBox.Header>
+                                                                        <TextBlock
+                                                                            Grid.Row="0"
+                                                                            Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                                            Text="{Binding Body.Value, Mode=OneWay}"
+                                                                            TextWrapping="Wrap" />
+                                                                    </GroupBox>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ListBox.ItemTemplate>
+                                                    </ListBox>
+                                                </Grid>
 
                                                 <ListBox
-                                                    Grid.Column="0"
-                                                    Grid.ColumnSpan="2"
+                                                    Grid.Column="0" Grid.ColumnSpan="2"
                                                     Grid.Row="2"
+                                                    Style="{StaticResource ContentListBox}"
+                                                    Width="{Binding ActualWidth, Mode=OneWay, ElementName=__cardContent}"
                                                     Visibility="{Binding ImageVisibility.Value, Mode=OneWay}"
-                                                    ItemsSource="{Binding SubImages}"
-                                                    ScrollViewer.CanContentScroll="False"
-                                                    material:ListBoxItemAssist.ShowSelection="False">
+                                                    ItemsSource="{Binding SubImages}">
                                                     <ListBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <WrapPanel

@@ -5,8 +5,8 @@ using System.Text.Json.Serialization;
 
 namespace Haru.Kei.SureyomiChan.Models.Compat;
 
-class Config20251229 : ConfigObject, IMigration<Config> {
-	public static readonly int CurrentVersion = 20251229;
+class Config20260130 : ConfigObject, IMigration<Config> {
+	public static readonly int CurrentVersion = 20260130;
 
 	[JsonPropertyName("save-root-path")]
 	[JsonInclude]
@@ -81,7 +81,26 @@ class Config20251229 : ConfigObject, IMigration<Config> {
 	[JsonInclude]
 	public required bool OpenWebViewDevTool { get; init; }
 
-	public Config20251229() : base(CurrentVersion) { }
+
+	// 20260130
+	[JsonPropertyName("save-enabled-convert-obs")]
+	[JsonInclude]
+	public required bool IsEnabledConvertObs { get; init; }
+	[JsonPropertyName("save-enabled-log-save")]
+	[JsonInclude]
+	public required bool IsEnabledLogSave { get; init; }
+	[JsonPropertyName("nijiurachan-yomiage-soudane")]
+	[JsonInclude]
+	public required YomiageConfig YomiageSoudane { get; init; }
+	[JsonPropertyName("other-enabled-auto-delete" /* 現在の分類では該当するカテゴリがないのでその他に置く */)]
+	[JsonInclude]
+	public required bool IsEnabledAutoDleteIdRes { get; init; }
+	[JsonPropertyName("other-use-output-sound-device" /* 現在の分類では該当するカテゴリがないのでその他に置く */)]
+	[JsonInclude]
+	public required string UsedSoundDevice { get; init; }
+
+
+	public Config20260130() : base(CurrentVersion) { }
 
 	public Config Migrate() => new() {
 		SaveSubFolderName = this.SaveSubFolderName,
@@ -108,14 +127,13 @@ class Config20251229 : ConfigObject, IMigration<Config> {
 		OpenWebViewDevTool = this.OpenWebViewDevTool,
 
 		// 20260130
-		IsEnabledConvertObs = Config.DefaultConfig.IsEnabledConvertObs,
-		IsEnabledLogSave = Config.DefaultConfig.IsEnabledLogSave,
-		YomiageSoudane = Config.DefaultConfig.YomiageSoudane,
-		IsEnabledAutoDleteIdRes = Config.DefaultConfig.IsEnabledAutoDleteIdRes,
-		UsedSoundDevice = Config.DefaultConfig.UsedSoundDevice,
+		IsEnabledConvertObs = this.IsEnabledConvertObs,
+		IsEnabledLogSave = this.IsEnabledLogSave,
+		YomiageSoudane = this.YomiageSoudane,
+		IsEnabledAutoDleteIdRes = this.IsEnabledAutoDleteIdRes,
+		UsedSoundDevice = this.UsedSoundDevice,
 
 		// 20260130
 		YomiagePoll = Config.DefaultConfig.YomiagePoll,
 	};
 }
-

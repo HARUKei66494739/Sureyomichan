@@ -132,6 +132,11 @@ class NijiuraChanPost : JsonObject {
 	[JsonPropertyName("sage")]
 	[JsonInclude]
 	public bool Sage { get; private set; }
+
+
+	[JsonPropertyName("poll")]
+	[JsonInclude]
+	public NijiuraChanPoll? Poll { get; private set; }	
 }
 
 class NijiuraChanPostState {
@@ -150,6 +155,10 @@ class NijiuraChanPostState {
 	[JsonPropertyName("reactions")]
 	[JsonInclude]
 	public NijiuraChanPostReaction Reaction { get; private set; } = NijiuraChanPostReaction.Default();
+
+	[JsonPropertyName("poll")]
+	[JsonInclude]
+	public NijiuraChanPoll? Poll { get; private set; }
 }
 
 class NijiuraChanPostReaction : JsonObject {
@@ -233,4 +242,26 @@ class NijiuraChanCensorshipNotice : JsonObject {
 	[JsonPropertyName("id")]
 	[JsonInclude]
 	public string? id { get; private set; }
+}
+
+
+class NijiuraChanPoll : JsonObject {
+	[JsonPropertyName("closesAt")]
+	[JsonInclude]
+	public string CloseAt { get; private set; } = "";
+
+	[JsonPropertyName("options")]
+	[JsonInclude]
+	public IEnumerable<NijiuraChanPollOption> Options { get; private set; } = Array.Empty<NijiuraChanPollOption>();
+}
+
+
+class NijiuraChanPollOption : JsonObject {
+	[JsonPropertyName("id")]
+	[JsonInclude]
+	public string Id { get; private set; } = "";
+
+	[JsonPropertyName("label")]
+	[JsonInclude]
+	public string Label { get; private set; } = "";
 }
