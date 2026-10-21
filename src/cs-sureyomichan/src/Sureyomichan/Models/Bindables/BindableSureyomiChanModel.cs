@@ -83,6 +83,30 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		}
 	}
 
+	public class BindableSureyomiExtendItem : INotifyPropertyChanged {
+		public event PropertyChangedEventHandler? PropertyChanged;
+
+		public IReadOnlyReactiveProperty<string> Title { get; }
+		public IReadOnlyReactiveProperty<string> Body { get; }
+		public ReactiveCommand LinkClickCommand { get; } = new();
+		private readonly string url;
+
+		public BindableSureyomiExtendItem(Models.SureyomiChanExtendItem item) {
+			this.url = item.Url;
+			this.Title = new ReactivePropertySlim<string>(initialValue: item.Title);
+			this.Body = new ReactivePropertySlim<string>(initialValue: item.Body);
+
+			this.LinkClickCommand.Subscribe(_ => this.OnOpenLink());
+		}
+
+		private void OnOpenLink() {
+			using var _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo() {
+				FileName = this.url,
+				UseShellExecute = true,
+			});
+		}
+	}
+
 	public event PropertyChangedEventHandler? PropertyChanged;
 
 	public IReadOnlyReactiveProperty<int> ResIndex { get; }
@@ -102,6 +126,9 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 	public IReadOnlyReactiveProperty<ImageItem?> Image {  get; }
 	public ReactiveCollection<ImageItem> SubImages { get; } = [];
 
+
+	public IReadOnlyReactiveProperty<Visibility> ExtendItemVisibility { get; }
+	public ReactiveCollection<BindableSureyomiExtendItem> ExtendItems { get; } = [];
 
 	public SureyomiChanModel Model { get; }
 
@@ -185,6 +212,14 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 				model.ThreadId, 
 				it,
 				subItem: true));
+		}
+
+		this.ExtendItemVisibility = new ReactivePropertySlim<Visibility>(initialValue: model.ExtendItems.Any() switch {
+			true => Visibility.Visible,
+			_ => Visibility.Collapsed
+		});
+		foreach(var it in model.ExtendItems) {
+			this.ExtendItems.Add(new(it));
 		}
 
 		this.IsNg = new(initialValue: isNg);

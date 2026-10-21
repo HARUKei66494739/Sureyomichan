@@ -1,5 +1,6 @@
 using ControlzEx.Standard;
 using Haru.Kei.SureyomiChan.Core;
+using Haru.Kei.SureyomiChan.Models;
 using Haru.Kei.SureyomiChan.Models.Bindables;
 using MaterialDesignThemes.Wpf;
 using Prism.Common;
@@ -18,7 +19,7 @@ using System.Windows;
 using BindableConfig = Haru.Kei.SureyomiChan.Models.Bindables.BindableConfig;
 using BindableSureyomi = Haru.Kei.SureyomiChan.Models.Bindables.BindableSureyomiChanModel;
 
-namespace Haru.Kei.SureyomiChan.ViewModels; 
+namespace Haru.Kei.SureyomiChan.ViewModels;
 internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	public record class DialogParams(
 		string UrlString,
@@ -89,6 +90,12 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	private readonly Core.UiMessageDispatcher uiMsgDispatcher;
 	private object viewToken = new();
 	private DialogParams? param;
+
+	// 暫定ここに置く
+	private readonly Dictionary<Type, IYomiageBehavior> yomiageBehaviors = new() {
+		[typeof(Models.NijiuraChanPoll)] = new PollYomiageBehavior(),
+	};
+
 	public YomiageDialogViewModel() {
 		this.uiMsgDispatcher = new() {
 			OnBeginApi = () => this.ApiState.Value = ProcessState.Running,
@@ -246,11 +253,6 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			}
 			api.Value.Run(
 				callBack: async (x, skip) => {
-					void yomiSpeak(string m) {
-						if(!skip) {
-							yomiage.EnqueueSpeak(m);
-						}
-					}
 					void yomiImage(IEnumerable<Models.AttachmentObject> attachments) {
 						if(!skip && attachments.Any(x => x.IsUpdatedTegakiPng)) {
 							yomiage.SaveImage();
@@ -281,8 +283,9 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 							}
 
 							if(!isNg) {
-								yomiSpeak(
-									string.Join('\n',
+								if(!skip) {
+									yomiage.EnqueueSpeak(
+										string.Join('\n',
 										body.Replace("\r", "")
 											.Split("\n")
 											.Select(x => x switch {
@@ -292,6 +295,12 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 											}))
 									);
 
+									foreach(var ex in it.ExtendItems) {
+										if(this.yomiageBehaviors.TryGetValue(ex.NativeObject.GetType(), out var beh)) {
+											yomiage.DoYomiage(beh.ToYomiageObject(ex.NativeObject, this.param.Config.Get()));
+										}
+									}
+								}
 								if(attachments.Count() != 0) {
 									yomiImage(attachments);
 									await this.param.AttachmentWriter.Save(x.Info, it, attachments);
@@ -452,4 +461,30 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 			this.EnqueueErrorMessage("まだ何も保存されていません");
 		}
 	}
+}
+
+
+
+// とりあえず今はPollしかないのでここに置いておく
+// あとで整理する
+
+internal interface IYomiageBehavior {
+	/// <summary>設定ではなくnativeObjectに応じたテキストを生成する場合YomiageConfigをテキスト設定で返却してください</summary>
+	public Models.YomiageConfig ToYomiageObject(object nativeObject, Models.Config config);
+}
+
+internal abstract class GenericsYomiageBehavior<T> : IYomiageBehavior {
+	Models.YomiageConfig IYomiageBehavior.ToYomiageObject(object nativeObject, Models.Config config) {
+		if(!(nativeObject is T grc)) {
+			throw new ArgumentException("バグ");
+		}
+
+		return this.To(grc, config);
+	}
+
+	protected abstract Models.YomiageConfig To(T nativeObject, Models.Config config);
+}
+
+internal class PollYomiageBehavior : GenericsYomiageBehavior<Models.NijiuraChanPoll> {
+	protected override Models.YomiageConfig To(Models.NijiuraChanPoll nativeObject, Models.Config config) => config.YomiagePoll;
 }

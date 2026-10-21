@@ -228,7 +228,23 @@ static class ModelsExtensions {
 			images: source.ToImages(),
 
 			token: Utils.Util.Tokenize(source.FormatBody()),
-			interaction: interaction);
+			interaction: interaction,
+			
+			extendItems: source.ToExItem(threadId));
+
+		private IEnumerable<Models.SureyomiChanExtendItem>? ToExItem(Helpers.ThreadId threadId) {
+			var r = new List<Models.SureyomiChanExtendItem>();
+			if(source.Poll is { } poll) {
+				r.Add(new(
+					Title: "投票",
+					Body: string.Join("/", poll.Options.Select(x => x.Label)),
+					Url: $"{Utils.Singleton.Instance.NijiuraChanTsUrl.GenUrlThread(threadId)}#post-{source.Id}",
+					NativeObject: poll
+					));
+			}
+
+			return r;
+		}
 
 		// 仕様として入っているaimgだけ今のところ除去する
 		private static string RemoveUnicodePrivateChar(string s) {

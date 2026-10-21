@@ -112,7 +112,10 @@ class Config20251229 : ConfigObject, IMigration<Config> {
 		IsEnabledLogSave = Config.DefaultConfig.IsEnabledLogSave,
 		YomiageSoudane = Config.DefaultConfig.YomiageSoudane,
 		IsEnabledAutoDleteIdRes = Config.DefaultConfig.IsEnabledAutoDleteIdRes,
-		UsedSoundDevice = Config.DefaultConfig.UsedSoundDevice
+		UsedSoundDevice = Config.DefaultConfig.UsedSoundDevice,
+
+		// 20260130
+		YomiagePoll = Config.DefaultConfig.YomiagePoll,
 	};
 }
 

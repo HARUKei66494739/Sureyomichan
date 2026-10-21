@@ -15,7 +15,7 @@ class ConfigObject(int version) : JsonObject {
 }
 
 class Config : ConfigObject {
-	public static readonly int CurrentVersion = 20260130;
+	public static readonly int CurrentVersion = 20260926;
 
 	public static Config DefaultConfig { get; } = new() {
 		SaveSubFolderName = "$Board$Thread",
@@ -66,7 +66,14 @@ class Config : ConfigObject {
 			Text = "そうだねかけるいち"
 		},
 		IsEnabledAutoDleteIdRes = false,
-		UsedSoundDevice = ""
+		UsedSoundDevice = "",
+
+		// 20260926
+		YomiagePoll = new() {
+			Method = YomiageConfig.YomiageMethodText,
+			File = "",
+			Text = "アンケートがきてますよ"
+		},
 	};
 
 	[JsonPropertyName("save-root-path")]
@@ -160,6 +167,11 @@ class Config : ConfigObject {
 	[JsonInclude]
 	public required string UsedSoundDevice { get; init; }
 
+
+	// 20260926
+	[JsonPropertyName("nijiurachan-yomiage-poll")]
+	[JsonInclude]
+	public required YomiageConfig YomiagePoll { get; init; }
 
 	[JsonIgnore]
 	public string PathDwonloadValue {

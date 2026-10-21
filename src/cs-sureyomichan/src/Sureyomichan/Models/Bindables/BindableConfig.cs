@@ -70,6 +70,11 @@ class BindableConfig : System.ComponentModel.INotifyPropertyChanged {
 	public ReactivePropertySlim<BindableSoundDevice> UsedSoundDevice { get; } = new(initialValue: BindableSoundDevice.Empty);
 	public ReactiveCollection<BindableSoundDevice> SoundDevices { get; } = new();
 
+	// 20260926
+	public BindableYomiageConfig YomiagePoll { get; } = new(
+		Config.DefaultConfig.YomiagePoll.Method,
+		Config.DefaultConfig.YomiagePoll.File,
+		Config.DefaultConfig.YomiagePoll.Text);
 
 
 	public BindableConfig(Config config) {
@@ -122,6 +127,9 @@ class BindableConfig : System.ComponentModel.INotifyPropertyChanged {
 		this.YomiageSoudane.Update(config.YomiageSoudane);
 		this.IsEnabledAutoDleteIdRes.Value = config.IsEnabledAutoDleteIdRes;
 		this.UsedSoundDevice.Value = usedSoundDevice;
+
+		// 20260926
+		this.YomiagePoll.Update(config.YomiagePoll);
 	}
 
 	private void OnDownloadFolderSelected(FolderSelectionMessage m) {
@@ -177,7 +185,10 @@ class BindableConfig : System.ComponentModel.INotifyPropertyChanged {
 			IsEnabledLogSave = this.IsEnabledLogSave.Value,
 			YomiageSoudane = this.YomiageSoudane.ToConfig(),
 			IsEnabledAutoDleteIdRes = this.IsEnabledAutoDleteIdRes.Value,
-			UsedSoundDevice = this.UsedSoundDevice.Value.Guid
+			UsedSoundDevice = this.UsedSoundDevice.Value.Guid,
+
+			// 20260130
+			YomiagePoll = this.YomiagePoll.ToConfig(),
 		};
 		try {
 			File.WriteAllText(SureyomiChanEnviroment.GetStaticString(SureyomiChanStaticItem.ConfigFile), config.ToString());

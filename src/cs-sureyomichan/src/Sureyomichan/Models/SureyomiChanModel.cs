@@ -50,7 +50,9 @@ class SureyomiChanModel(
 
 	string? id,
 	IEnumerable<Models.Token> token,
-	ISureyomiChanInteraction interaction) {
+	ISureyomiChanInteraction interaction,
+
+	IEnumerable<SureyomiChanExtendItem>? extendItems = null) {
 
 	public Helpers.ThreadId ThreadId { get; } = threadId;
 	public int ResIndex { get; } = resIndex;
@@ -66,18 +68,24 @@ class SureyomiChanModel(
 	public IEnumerable<SureyomiChanImage> Images { get; } = [..images];
 	public IEnumerable<Models.Token> Token { get; } = token;
 	public ISureyomiChanInteraction Interaction { get; } = interaction;
+
+	public IEnumerable<SureyomiChanExtendItem> ExtendItems { get; } = (extendItems switch {
+		{ } v => v.ToArray(),
+		_ => Array.Empty<SureyomiChanExtendItem>(),
+	}).AsReadOnly();
 }
 
-class SureyomiChanImage(
-	string imageFileName,
-	string imageSource,
-	string thumbnailSource
-	) {
+record class SureyomiChanImage(
+	string ImageFileName,
+	string ImageSource,
+	string ThumbnailSource
+	);
 
-	public string ImageFileName { get; } = imageFileName;
-	public string ImageSource { get; } = imageSource;
-	public string ThumbnailSource { get; } = thumbnailSource;
-}
+record class SureyomiChanExtendItem(
+	string Title,
+	string Body,
+	string Url,
+	object NativeObject);
 
 interface ISureyomiChanFeature {
 	public bool IsSupportThreadOld { get; }
