@@ -134,7 +134,7 @@ static class Util {
 
 	public static Task<int> AddCustomUrlScheme(string name, string exePath, nint hwnd)
 		=> DoCustomUrlScheme(
-			@$"/c reg add ""HKEY_CLASSES_ROOT\{name}"" /v ""URL Protocol"" /t ""REG_SZ"" /f  & reg add ""HKEY_CLASSES_ROOT\{name}\shell\open\command"" /t ""REG_SZ"" /d ""{exePath} %1"" /f",
+			@$"/c reg add ""HKEY_CLASSES_ROOT\{name}"" /v ""URL Protocol"" /t ""REG_SZ"" /f  & reg add ""HKEY_CLASSES_ROOT\{name}\shell\open\command"" /t ""REG_SZ"" /d ""\""{exePath}\"" %1"" /f",
 			hwnd);
 
 	public static Task<int> RemoveCustomUrlScheme(string name, nint hwnd)
