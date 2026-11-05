@@ -279,12 +279,21 @@
                                                     MinWidth="128"
                                                     >
                                                     <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="*" />
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
-                                                    <TextBlock
+                                                    <TextBox
                                                         Grid.Row="0"
-                                                        Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                        VerticalAlignment="Stretch"
+                                                        HorizontalScrollBarVisibility="Hidden"
+                                                        VerticalScrollBarVisibility="Hidden"
+                                                        BorderBrush="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="4,4,4,14"
+                                                        IsReadOnly="True"
+                                                        AcceptsReturn="True"
+                                                        FontSize="14"
                                                         Text="{Binding Body.Value, Mode=OneWay}"
                                                         TextWrapping="Wrap" />
 
