@@ -19,7 +19,7 @@ class WebView2Proxy {
 	private readonly string localRoot;
 	private readonly bool isOpenWebViewDevTool;
 
-	public event EventHandler? Initialized;
+	public event EventHandler<WebViewInitilizedEventArgs>? Initialized;
 
 	// WebView2Proxyの設定更新は再起動が必要
 	public WebView2Proxy(
@@ -45,11 +45,13 @@ class WebView2Proxy {
 
 	private async void OnBootNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e) {
 		this.webView2.NavigationCompleted -= this.OnBootNavigationCompleted;
+		await Task.Delay(500);
 		foreach(var it in Directory.EnumerateFiles(Path.Combine(localRoot, "plugins"), "*.js", SearchOption.AllDirectories)) {
 			var plugin_js = it.AsSpan().Slice(localRoot.Length).ToString();
 			Utils.Logger.Instance.Info($"互換JavaScriptプラグインの読み込み => {plugin_js}");
-			await this.webView2.CoreWebView2.ExecuteScriptAsync(@$"
+			var ret = await this.webView2.CoreWebView2.ExecuteScriptWithResultAsync(@$"
 {{
+		console.log(chrome.webview.hostObjects.sync.TegakiSaveObject.GetStoreFromId);
 	let file = '{plugin_js.Replace('\\', '/')}';
 	import(file)
 	  .then(m => {{
@@ -57,9 +59,13 @@ class WebView2Proxy {
 	  }})
 }}
 ");
+			if(!ret.Succeeded) {
+				Utils.Logger.Instance.Error($"プラグイン読み込みでエラー => {ret.Exception.ToJson}");
+			}
 		}
 
-		await this.webView2.CoreWebView2.ExecuteScriptAsync(@$"
+		{
+			var ret = await this.webView2.CoreWebView2.ExecuteScriptWithResultAsync(@$"
 function __fromBase64(b) {{
 	return  new TextDecoder()
 		.decode(Uint8Array.fromBase64(b));
@@ -77,7 +83,7 @@ function __getTegakiSaveJson(param) {{
 	}}
 
 	if(param.threadNo) {{
-		retrun chrome.webview.hostObjects.sync.TegakiSaveObject.GetStoreFromNo(param.threadNo);
+		return chrome.webview.hostObjects.sync.TegakiSaveObject.GetStoreFromNo(param.threadNo);
 	}}
 
 	return null;
@@ -95,7 +101,13 @@ function __runNgPlugins(base64) {{
 	}});
 	return __toBase64(JSON.stringify(pResult));
 }}");
-		Initialized?.Invoke(this, EventArgs.Empty);
+			if(!ret.Succeeded) {
+				Utils.Logger.Instance.Error($"WebViewコンポーネント初期化でエラー => {ret.Exception.ToJson}");
+			}
+			Initialized?.Invoke(this, new() {
+				IsSucceed = ret.Succeeded
+			});
+		}
 	}
 
 	private async void OnWebViewInitialization(object? sender, CoreWebView2InitializationCompletedEventArgs e) {
@@ -135,14 +147,15 @@ function __runNgPlugins(base64) {{
 							replaceComment: x.Body)
 					}.ToString(writeIndented: false);
 					var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
-					var r = await this.webView2.CoreWebView2.ExecuteScriptAsync($"__runNgPlugins('{base64}')");
-					if(r == "null") {
+					var r = await this.webView2.CoreWebView2.ExecuteScriptWithResultAsync($"__runNgPlugins('{base64}');");
+					if(!r.Succeeded) {
+						Utils.Logger.Instance.Error($"tegaki_saveプラグイン内でエラー => {r.Exception.ToJson}");
 						return null;
 					}
 
 					var s = Encoding.UTF8.GetString(
 						Convert.FromBase64String(
-							FormatScriptResult(r)));
+							FormatScriptResult(r.ResultAsJson)));
 					return JsonSerializer.Deserialize<Models.TegakiSavePluginResult>(s);
 				}), default);
 		if(task is { }) {
@@ -157,7 +170,7 @@ function __runNgPlugins(base64) {{
 			Observable.Return(url)
 				.ObserveOn(Reactive.Bindings.UIDispatcherScheduler.Default)
 				.Select(async x => {
-					var r = await this.webView2.CoreWebView2.ExecuteScriptAsync($@"
+					var r = await this.webView2.CoreWebView2.ExecuteScriptWithResultAsync($@"
 {{
     const xmlHttpApi = new XMLHttpRequest();    
     xmlHttpApi.open('GET', '{url}', false);
@@ -166,13 +179,13 @@ function __runNgPlugins(base64) {{
 	__toBase64(xmlHttpApi.responseText);
 }}
 ");
-					if(r == "null") {
+					if(!r.Succeeded) {
 						return "";
 					}
 
 					return Encoding.UTF8.GetString(
 						Convert.FromBase64String(
-							FormatScriptResult(r)));
+							FormatScriptResult(r.ResultAsJson)));
 				}), default);
 		if(task is { }) {
 			return await task;
@@ -217,7 +230,7 @@ class __NijiuraChanWebView2Proxy {
 
 	private async void OnBootNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e) {
 		this.webView2.NavigationCompleted -= this.OnBootNavigationCompleted;
-		await this.webView2.CoreWebView2.ExecuteScriptAsync(@$"
+		var ret = await this.webView2.CoreWebView2.ExecuteScriptWithResultAsync(@$"
 function __fromBase64(b) {{
 	return  new TextDecoder()
 		.decode(Uint8Array.fromBase64(b));
@@ -228,6 +241,9 @@ function __toBase64(s) {{
 		.encode(s)
 		.toBase64();
 }}");
+		if(!ret.Succeeded) {
+			Utils.Logger.Instance.Error($"プラグイン読み込みでエラー => {ret.Exception.ToJson}");
+		}
 	}
 
 	private async void OnWebViewInitialization(object? sender, CoreWebView2InitializationCompletedEventArgs e) {
@@ -336,4 +352,8 @@ file class RunPluginParams : Models.JsonObject {
 public class HostObject(ITegakiSaveStore tegakiSaveStore) {
 	public string GetStoreFromNo(int resNo) => tegakiSaveStore.GetStore(resNo);
 	public string GetStoreFromId(string resId) => tegakiSaveStore.GetStore(resId);
+}
+
+internal class WebViewInitilizedEventArgs : EventArgs {
+	public required bool IsSucceed { get; init; }
 }
