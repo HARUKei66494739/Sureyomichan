@@ -266,12 +266,7 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 	}
 
 	private void OnCopyBody() {
-		try {
 			Clipboard.SetText(this.Body.Value);
-		}
-		catch(Exception ex) {
-			Utils.Logger.Instance.Error(ex);
-		}
 	}
 
 	public void BeginDelete(Func<Task<bool>> callback) {
