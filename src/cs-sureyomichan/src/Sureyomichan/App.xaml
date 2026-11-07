@@ -40,11 +40,22 @@
 
             <Style TargetType="{x:Type mah:WindowButtonCommands}">
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding ShowTitleBar, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type mah:MetroWindow}}}"
-                     Value="True">
+                    <DataTrigger
+                        Binding="{Binding IsActive, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type mah:MetroWindow}}}"
+                        Value="True">
                         <Setter Property="Foreground">
                             <Setter.Value>
-                                <SolidColorBrush Color="{DynamicResource Primary500Foreground}" />
+                                <SolidColorBrush Color="{DynamicResource Primary700Foreground}" />
+                            </Setter.Value>
+                        </Setter>
+                    </DataTrigger>
+
+                    <DataTrigger
+                        Binding="{Binding IsActive, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type mah:MetroWindow}}}"
+                        Value="False">
+                        <Setter Property="Foreground">
+                            <Setter.Value>
+                                <SolidColorBrush Color="{DynamicResource Primary200Foreground}" />
                             </Setter.Value>
                         </Setter>
                     </DataTrigger>
@@ -67,7 +78,29 @@
                         <SolidColorBrush Color="{DynamicResource Primary700}" />
                     </Setter.Value>
                 </Setter>
+                <Setter Property="NonActiveBorderBrush">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary200}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="NonActiveWindowTitleBrush">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary200}" />
+                    </Setter.Value>
+                </Setter>
+
                 <Setter Property="TitleCharacterCasing" Value="Normal" />
+
+
+                <Style.Triggers>
+                    <Trigger Property="IsActive" Value="False">
+                        <Setter Property="TitleForeground">
+                            <Setter.Value>
+                                <SolidColorBrush Color="{DynamicResource Primary200Foreground}" />
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <Style TargetType="{x:Type view:MainWindow}" BasedOn="{StaticResource __DefaultWindowStyle}" />
             <Style TargetType="{x:Type view:YomiageDialogWindow}" BasedOn="{StaticResource __DefaultWindowStyle}" />
