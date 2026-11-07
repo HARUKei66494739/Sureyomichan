@@ -204,6 +204,13 @@
                                                     Grid.Column="6"
                                                     Grid.Row="0"
                                                     Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Content="本文コピー"
+                                                    Command="{Binding CopyBodyCommand, Mode=OneWay}"
+                                                    />
+                                                <Button
+                                                    Grid.Column="8"
+                                                    Grid.Row="0"
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
                                                     Visibility="{Binding SendDelVisibility.Value, Mode=OneWay}"
                                                     Content="del"
                                                     >
@@ -214,7 +221,7 @@
                                                     </i:Interaction.Triggers>
                                                 </Button>
                                                 <Button
-                                                    Grid.Column="8"
+                                                    Grid.Column="10"
                                                     Grid.Row="0"
                                                     material:ButtonProgressAssist.IsIndeterminate="{Binding IndeterminateDeleteProgress.Value, Mode=OneWay}"
                                                     material:ButtonProgressAssist.IsIndicatorVisible="True"
@@ -230,13 +237,6 @@
                                                         </i:EventTrigger>
                                                     </i:Interaction.Triggers>
                                                 </Button>
-                                                <Button
-                                                    Grid.Column="10"
-                                                    Grid.Row="0"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                                                    Content="本文コピー"
-                                                    Command="{Binding CopyBodyCommand, Mode=OneWay}"
-                                                    />
                                             </Grid>
                                             <Grid Grid.Row="2">
                                                 <Grid.ColumnDefinitions>
