@@ -1,18 +1,15 @@
-<Window
+<mah:MetroWindow
     x:Class="Haru.Kei.SureyomiChan.Views.YomiageDialogWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:mahApps="http://metro.mahapps.com/winfx/xaml/controls"
+    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:local="clr-namespace:Haru.Kei.SureyomiChan.Views"
     mc:Ignorable="d"
     Title="{Binding Title, Mode=OneWay}"
     Height="720" Width="640"
     />
- <!-- 
-     TitleCharacterCasing="Normal"
-    TitleForeground="White"    
- -->
+
 
 

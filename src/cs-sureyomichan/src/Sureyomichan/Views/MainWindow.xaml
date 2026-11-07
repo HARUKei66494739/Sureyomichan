@@ -1,4 +1,4 @@
-<Window
+<mah:MetroWindow
     x:Name="_this"
     x:Class="Haru.Kei.SureyomiChan.Views.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,7 +9,7 @@
     xmlns:ri="clr-namespace:Reactive.Bindings.Interactivity;assembly=ReactiveProperty.WPF"
     xmlns:l="http://schemas.livet-mvvm.net/2011/wpf" 
     xmlns:material="http://materialdesigninxaml.net/winfx/xaml/themes"
-    xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     xmlns:b="clr-namespace:Haru.Kei.SureyomiChan.Behaviors"
     xmlns:local="clr-namespace:Haru.Kei.SureyomiChan.Views"
@@ -1231,4 +1231,4 @@
             MessageQueue="{Binding SnackbarMessageQueue}"
             />
     </Grid>
-</Window>
+</mah:MetroWindow>
