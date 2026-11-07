@@ -15,7 +15,7 @@ namespace Haru.Kei.SureyomiChan.Views {
 	/// <summary>
 	/// DialogWindow.xaml の相互作用ロジック
 	/// </summary>
-	public partial class YomiageDialogWindow : Window /* MahApps.Metro.Controls.MetroWindow */, IDialogWindow {
+	public partial class YomiageDialogWindow : MahApps.Metro.Controls.MetroWindow, IDialogWindow {
 		public YomiageDialogWindow() {
 			InitializeComponent();
 			this.Loaded += (_, _) => {

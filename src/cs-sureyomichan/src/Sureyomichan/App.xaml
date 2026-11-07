@@ -4,13 +4,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:prism="http://prismlibrary.com/"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+    xmlns:view="clr-namespace:Haru.Kei.SureyomiChan.Views"
     xmlns:local="clr-namespace:Haru.Kei.SureyomiChan">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!--
-                <materialDesign:MahAppsBundledTheme BaseTheme="Inherit" PrimaryColor="Pink" SecondaryColor="Pink"  ColorAdjustment="{materialDesign:ColorAdjustment}" />
-                -->
+                <materialDesign:MahAppsBundledTheme BaseTheme="Light" PrimaryColor="Pink" SecondaryColor="Indigo"  ColorAdjustment="{materialDesign:ColorAdjustment}" />
 
                 <!-- MahApps -->
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
@@ -29,7 +29,6 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.MahApps;component/Themes/MaterialDesignTheme.MahApps.Flyout.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.MahApps;component/Themes/MaterialDesignTheme.MahApps.Defaults.xaml" />
 
-
                 <ResourceDictionary Source="/Resources/Xaml/MaterialColor.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -38,7 +37,73 @@
             <SolidColorBrush x:Key="IdealForegroundDisabledBrush" Color="{DynamicResource Primary500}" Opacity="0.4"/>
             <SolidColorBrush x:Key="MahApps.Brushes.ThemeForeground" Color="{DynamicResource Primary500Foreground}" />
             -->
-            
+
+            <Style TargetType="{x:Type mah:WindowButtonCommands}">
+                <Style.Triggers>
+                    <DataTrigger
+                        Binding="{Binding IsActive, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type mah:MetroWindow}}}"
+                        Value="True">
+                        <Setter Property="Foreground">
+                            <Setter.Value>
+                                <SolidColorBrush Color="{DynamicResource Primary700Foreground}" />
+                            </Setter.Value>
+                        </Setter>
+                    </DataTrigger>
+
+                    <DataTrigger
+                        Binding="{Binding IsActive, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type mah:MetroWindow}}}"
+                        Value="False">
+                        <Setter Property="Foreground">
+                            <Setter.Value>
+                                <SolidColorBrush Color="{DynamicResource Primary200Foreground}" />
+                            </Setter.Value>
+                        </Setter>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="__DefaultWindowStyle" TargetType="{x:Type mah:MetroWindow}" BasedOn="{StaticResource {x:Type mah:MetroWindow}}">
+                <Setter Property="TitleForeground">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary500Foreground}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="BorderBrush">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary700}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="GlowBrush">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary700}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="NonActiveBorderBrush">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary200}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="NonActiveWindowTitleBrush">
+                    <Setter.Value>
+                        <SolidColorBrush Color="{DynamicResource Primary200}" />
+                    </Setter.Value>
+                </Setter>
+
+                <Setter Property="TitleCharacterCasing" Value="Normal" />
+
+
+                <Style.Triggers>
+                    <Trigger Property="IsActive" Value="False">
+                        <Setter Property="TitleForeground">
+                            <Setter.Value>
+                                <SolidColorBrush Color="{DynamicResource Primary200Foreground}" />
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style TargetType="{x:Type view:MainWindow}" BasedOn="{StaticResource __DefaultWindowStyle}" />
+            <Style TargetType="{x:Type view:YomiageDialogWindow}" BasedOn="{StaticResource __DefaultWindowStyle}" />
         </ResourceDictionary>
     </Application.Resources>
 </prism:PrismApplication>
