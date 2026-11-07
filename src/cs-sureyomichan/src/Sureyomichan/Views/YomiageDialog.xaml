@@ -172,6 +172,8 @@
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="8" />
                                                     <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
 
                                                 <TextBlock
@@ -228,6 +230,13 @@
                                                         </i:EventTrigger>
                                                     </i:Interaction.Triggers>
                                                 </Button>
+                                                <Button
+                                                    Grid.Column="10"
+                                                    Grid.Row="0"
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Content="本文コピー"
+                                                    Command="{Binding CopyBodyCommand, Mode=OneWay}"
+                                                    />
                                             </Grid>
                                             <Grid Grid.Row="2">
                                                 <Grid.ColumnDefinitions>
