@@ -142,6 +142,8 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 	public IReadOnlyReactiveProperty<Visibility> SendDelVisibility { get; }
 	public IReadOnlyReactiveProperty<Visibility> DeleteResVisibility { get; }
 
+	public ReactiveCommand CopyBodyCommand { get; } = new();
+
 	private IDisposable? deleteSubscriber = null;
 	private double __deleteProgress = 0d;
 	private const int DeleteGraceTimeMiliSec = 2000;
@@ -259,6 +261,17 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 		}).ToReadOnlyReactivePropertySlim<string>();
 
 		this.Model = model;
+
+		this.CopyBodyCommand.Subscribe(_ => this.OnCopyBody());
+	}
+
+	private void OnCopyBody() {
+		try {
+			Clipboard.SetText(this.Body.Value);
+		}
+		catch(Exception ex) {
+			Utils.Logger.Instance.Error(ex);
+		}
 	}
 
 	public void BeginDelete(Func<Task<bool>> callback) {
