@@ -51,7 +51,6 @@ class WebView2Proxy {
 			Utils.Logger.Instance.Info($"互換JavaScriptプラグインの読み込み => {plugin_js}");
 			var ret = await this.webView2.CoreWebView2.ExecuteScriptWithResultAsync(@$"
 {{
-		console.log(chrome.webview.hostObjects.sync.TegakiSaveObject.GetStoreFromId);
 	let file = '{plugin_js.Replace('\\', '/')}';
 	import(file)
 	  .then(m => {{
