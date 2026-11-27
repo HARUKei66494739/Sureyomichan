@@ -74,6 +74,9 @@ class TegakiSaveResData : JsonObject {
 	[JsonPropertyName("__sureyomi_terms")]
 	[JsonInclude]
 	public List<Token>? SureyomiTerms { get; set; } = null;
+	[JsonPropertyName("__sureyomi_board_id")]
+	[JsonInclude]
+	public string SureyomiBoardId { get; set; } = "";
 }
 
 class TegakiSavePluginResult : JsonObject {

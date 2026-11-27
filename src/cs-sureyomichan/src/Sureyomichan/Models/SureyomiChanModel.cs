@@ -95,11 +95,9 @@ interface ISureyomiChanFeature {
 
 interface ISureyomiChanInteraction {
 	SureyomiChanBoardId BoardId { get; }
-	bool IsSupportSendDel { get; }
-	bool IsSupportDeleteRes { get; }
 
-	Task<bool> SendDelAction();
-	Task<bool> DeleteResAction();
+	Task<bool> SendDelAction(Models.ConfigCredential credential);
+	Task<bool> DeleteResAction(Models.ConfigCredential credential);
 
 	Task<IEnumerable<AttachmentObject>> DownloadImages();
 }

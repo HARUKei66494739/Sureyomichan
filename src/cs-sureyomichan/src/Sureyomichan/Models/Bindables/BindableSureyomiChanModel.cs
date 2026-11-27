@@ -139,9 +139,6 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 	public IReadOnlyReactiveProperty<Visibility> NgVisibility { get; }
 	public IReadOnlyReactiveProperty<string> NgText { get; }
 
-	public IReadOnlyReactiveProperty<Visibility> SendDelVisibility { get; }
-	public IReadOnlyReactiveProperty<Visibility> DeleteResVisibility { get; }
-
 	public ReactiveCommand CopyBodyCommand { get; } = new();
 
 	private IDisposable? deleteSubscriber = null;
@@ -226,15 +223,6 @@ class BindableSureyomiChanModel : INotifyPropertyChanged {
 
 		this.IsNg = new(initialValue: isNg);
 		this.DeleteType = new(initialValue: model.DeleteType);
-
-		this.SendDelVisibility = new ReactivePropertySlim<Visibility>(initialValue: model.Interaction.IsSupportSendDel switch {
-			true => Visibility.Visible,
-			_ => Visibility.Collapsed
-		});
-		this.DeleteResVisibility = new ReactivePropertySlim<Visibility>(initialValue: model.Interaction.IsSupportDeleteRes switch {
-			true => Visibility.Visible,
-			_ => Visibility.Collapsed
-		});
 
 		this.NgText = this.DeleteType
 			.CombineLatest(this.IsNg, (x, ng) => (x, ng) switch {

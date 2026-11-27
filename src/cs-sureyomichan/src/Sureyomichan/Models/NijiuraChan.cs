@@ -265,3 +265,74 @@ class NijiuraChanPollOption : JsonObject {
 	[JsonInclude]
 	public string Label { get; private set; } = "";
 }
+
+
+class NijiuraChanAppAuthorizations : Models.JsonObject {
+	[JsonPropertyName("redirectUri")]
+	[JsonInclude] 
+	public required string RedirectUri { get; init; }
+
+	[JsonPropertyName("installationId")]
+	[JsonInclude]
+	public required string InstallationId { get; init; }
+
+	[JsonPropertyName("state")]
+	[JsonInclude]
+
+	public required string State { get; init; }
+
+	[JsonIgnore]
+	public string CodeVerifier { get; init; } = "";
+
+	[JsonPropertyName("codeChallenge")]
+	[JsonInclude]
+
+	public required string CodeChallenge { get; init; }
+
+	[JsonPropertyName("codeChallengeMethod")]
+	[JsonInclude]
+	public string CodeChallengeMethod { get; init; } = "S256";
+}
+
+
+class NijiuraChanAppAuthorizationsResponse : Models.JsonObject {
+	[JsonPropertyName("id")]
+	[JsonInclude]
+	public required string Id { get; init; }
+
+	[JsonPropertyName("expiresAt")]
+	[JsonInclude]
+	public required string ExpiresAt { get; init; }
+
+	[JsonPropertyName("authorizationUrl")]
+	[JsonInclude]
+	public required string AuthorizationUrl { get; init; }	
+}
+
+class NijiuraChanAppCredentials : Models.JsonObject {
+	[JsonPropertyName("redirectUri")]
+	[JsonInclude]
+	public required string RedirectUri { get; init; }
+
+	[JsonPropertyName("code")]
+	[JsonInclude]
+	public required string Code { get; init; }
+
+	[JsonPropertyName("codeVerifier")]
+	[JsonInclude]
+	public required string CodeVerifier { get; init; }
+}
+
+class NijiuraChanAppCredentialsResponse : Models.JsonObject {
+	[JsonPropertyName("credential")]
+	[JsonInclude]
+	public required string Credential { get; init; }
+
+	[JsonPropertyName("credentialId")]
+	[JsonInclude]
+	public required string CredentialId { get; init; }
+
+	[JsonPropertyName("expiresAt")]
+	[JsonInclude]
+	public required string ExpiresAt { get; init; }
+}
