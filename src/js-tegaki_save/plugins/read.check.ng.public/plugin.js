@@ -102,7 +102,27 @@ function checkNg(param) {
     };
     
     return result(test(), ret);
+  }};  
+  list[list.length] = {matchType : option(MATCH_LAMBDA), value : (
+    template,
+    comment,
+    commentFormat,
+    res,
+    ret) => {
+
+    if(res.__sureyomi_board_id || res.__sureyomi_board_id != "FutabaImg") {
+      return result(false, ret);
+    }
+    if(param.res.fsize === 0) {
+      return result(false, ret);
+    }
+    if(param.res.ext.toLowerCase() === ".png") {
+      return result(false, ret);
+    }
+
+    result(true, ret)
   }};
+
   list[list.length] = {matchType : option(MATCH_NONE) , value : ""};
   list[list.length] = {matchType : option(MATCH_NONE) , value : ""};
   list[list.length] = {matchType : option(MATCH_NONE) , value : ""};
