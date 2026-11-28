@@ -37,6 +37,12 @@ class Singleton {
 		this.HttpClient.DefaultRequestHeaders.Add("User-Agent", "SureyomiChan/v1");
 		this.HttpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
+		// nijiurachan用
+		this.HttpClient.DefaultRequestHeaders.Add("X-Api-Version", "2026-11-11");
+		this.HttpClient.DefaultRequestHeaders.Add("X-Board-Key", "test");
+
+
+
 		this.FutabaApi = new(this.HttpClient, this.futabaUrl);
 		this.NijiuraChanTsApi = new(this.HttpClient, this.NijiuraChanTsUrl);
 	}

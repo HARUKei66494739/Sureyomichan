@@ -32,7 +32,6 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		Core.AttachmentWriter AttachmentWriter,
 		Core.TegakiSaveStore Store,
 		Core.WebView2Proxy WebView,
-		Core.__NijiuraChanWebView2Proxy __NijiuraChanWebView,
 		Core.SureyomiChanNgProcesser Ng);
 	enum ProcessState {
 		Sucess,
@@ -72,6 +71,8 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	public ReactivePropertySlim<string> Url { get; } = new(initialValue: "");
 	public ReactivePropertySlim<bool> ListBoxAutoScroll { get; } = new(initialValue: true);
 
+	public ReactivePropertySlim<bool> IsAuthorized { get; } = new(initialValue: false);
+
 	public ReadOnlyReactivePropertySlim<Visibility> YomiageStatusStop { get; }
 	public ReadOnlyReactivePropertySlim<Visibility> YomiageStatusRunning { get; }
 	public ReadOnlyReactivePropertySlim<Visibility> TegakiSaveStatusStop { get; }
@@ -87,6 +88,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 	public ReactiveCommandSlim<RoutedEventArgs> SendDelCommand { get; } = new();
 	public ReactiveCommandSlim<RoutedEventArgs> DeleteResCommand { get; } = new();
 
+	private readonly Models.Prism.ICredentialStore credentialStore;
 	private readonly Core.UiMessageDispatcher uiMsgDispatcher;
 	private object viewToken = new();
 	private DialogParams? param;
@@ -96,7 +98,8 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		[typeof(Models.NijiuraChanPoll)] = new PollYomiageBehavior(),
 	};
 
-	public YomiageDialogViewModel() {
+	public YomiageDialogViewModel(Models.Prism.ICredentialStore credentialStore) {
+		this.credentialStore = credentialStore;
 		this.uiMsgDispatcher = new() {
 			OnBeginApi = () => this.ApiState.Value = ProcessState.Running,
 			OnEndApi = (sucessed) => this.ApiState.Value = sucessed switch {
@@ -201,6 +204,13 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 
 		this.Title = this.Url.Value = this.param.UrlString;
 		this.StartYomiage(this.param.IsLatest);
+		this.IsAuthorized.Value = this.param.Url.BoardId switch {
+			SureyomiChanBoardId.FutabaImg => true,
+			SureyomiChanBoardId.NijiuraChanAimg
+				=> (this.credentialStore.Credential.Njiurachan != null)
+					&& (!string.IsNullOrEmpty(this.param.Config.Get().NijiuraChanPasswd)),
+			_ => false,
+		};
 	}
 
 	public void OnDialogClosed() {
@@ -245,8 +255,7 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 				this.param.Url,
 				this.param.ThreadId,
 				this.uiMsgDispatcher,
-				this.param.Config,
-				this.param.__NijiuraChanWebView);
+				this.param.Config);
 			{
 				var c = this.param.Config.Get();
 				yomiage.DoYomiageOnce(c.YomiageStarted, nameof(c.YomiageStarted));
@@ -395,10 +404,11 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 		if(e.Source is FrameworkElement el && el.DataContext is BindableSureyomi m) {
 			try {
 				Utils.Logger.Instance.Info("delを送信");
-				var r = await m.Model.Interaction.SendDelAction();
+				var r = await m.Model.Interaction.SendDelAction(this.credentialStore.Credential);
 				Utils.Logger.Instance.Info($"delを送信しました => {r}");
 			}
 			catch(Exceptions.SureyomiChanException ex) {
+				this.EnqueueErrorMessage($"レス[{m.Model.No}]のdel送信でエラーが発生しました");
 				Utils.Logger.Instance.Error(ex);
 			}
 		}
@@ -417,13 +427,14 @@ internal class YomiageDialogViewModel : BindableBase, IDialogAware {
 					this.param.Store.MarkNg(m.Model.No);
 
 					Utils.Logger.Instance.Info("レス削除を呼び出します");
-					r = await m.Model.Interaction.DeleteResAction();
+					r = await m.Model.Interaction.DeleteResAction(this.credentialStore.Credential);
 					Utils.Logger.Instance.Info($"レス削除を呼び出しました => {r}");
 					if(!r) {
 						this.EnqueueErrorMessage($"レス[{m.Model.No}]の削除に失敗しました");
 					}
 				}
 				catch(Exceptions.SureyomiChanException ex) {
+					this.EnqueueErrorMessage($"レス[{m.Model.No}]の削除中にエラーが発生しました");
 					Utils.Logger.Instance.Error(ex);
 				}
 				return r;

@@ -11,6 +11,7 @@ class ConfigLoader {
 	private static Dictionary<int, Type> migrationTable = new() {
 		[Models.Compat.Config20251229.CurrentVersion] = typeof(Models.Compat.Config20251229),
 		[Models.Compat.Config20260130.CurrentVersion] = typeof(Models.Compat.Config20260130),
+		[Models.Compat.Config20260926.CurrentVersion] = typeof(Models.Compat.Config20260926),
 	};
 
 	public Models.Config? Load() {

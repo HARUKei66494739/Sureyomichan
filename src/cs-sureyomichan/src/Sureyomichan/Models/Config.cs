@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,7 +16,7 @@ class ConfigObject(int version) : JsonObject {
 }
 
 class Config : ConfigObject {
-	public static readonly int CurrentVersion = 20260926;
+	public static readonly int CurrentVersion = 20261114;
 
 	public static Config DefaultConfig { get; } = new() {
 		SaveSubFolderName = "$Board$Thread",
@@ -74,6 +75,14 @@ class Config : ConfigObject {
 			File = "",
 			Text = "アンケートがきてますよ"
 		},
+
+		// 20261114
+		NijiurachanUUID = Guid.NewGuid().ToString(),
+		NijiurachanAuthPort = 9146,
+		FormatFutabaThreadTxt = "",
+		FormatFutabaBouyomi = "",
+		FormatNijiurachanThreadTxt = "",
+		FormatNijiurachanBouyomi = "",
 	};
 
 	[JsonPropertyName("save-root-path")]
@@ -173,6 +182,34 @@ class Config : ConfigObject {
 	[JsonInclude]
 	public required YomiageConfig YomiagePoll { get; init; }
 
+
+	// 20261114
+	[JsonPropertyName("nijiurachan-auth-uuid")]
+	[JsonInclude]
+	public required string NijiurachanUUID { get; init; }
+
+	[JsonPropertyName("nijiurachan-auth-port")]
+	[JsonInclude]
+	public required int NijiurachanAuthPort { get; init; }
+
+	[JsonPropertyName("format-futaba-thread-txt")]
+	[JsonInclude]
+	public required string FormatFutabaThreadTxt { get; init; }
+
+	[JsonPropertyName("format-futaba-bouyomi")]
+	[JsonInclude]
+	public required string FormatFutabaBouyomi { get; init; }
+
+
+	[JsonPropertyName("format-nijiurachan-thread-txt")]
+	[JsonInclude]
+	public required string FormatNijiurachanThreadTxt { get; init; }
+
+	[JsonPropertyName("format-nijiurachan-bouyomi")]
+	[JsonInclude]
+	public required string FormatNijiurachanBouyomi { get; init; }
+
+
 	[JsonIgnore]
 	public string PathDwonloadValue {
 		get {
@@ -225,4 +262,40 @@ class YomiageConfig : JsonObject {
 	[JsonPropertyName("text")]
 	[JsonInclude]
 	public required string Text { get; init; }
+}
+
+
+class ConfigCredential : ConfigObject {
+	public static readonly int CurrentVersion = 20261114;
+
+
+	[JsonIgnore]
+	public ConfigCredentialObj? Futaba { get; private set; } = new() {
+		Credential = "1111",
+		ExpiresAt = "",
+		Slug = "img",
+	};
+
+
+	[JsonPropertyName("aimg")]
+	[JsonInclude]
+	public required ConfigCredentialObj? Njiurachan { get; init; }
+
+	public ConfigCredential() : base(CurrentVersion) { }
+}
+
+
+class ConfigCredentialObj : JsonObject {
+
+	[JsonPropertyName("credential")]
+	[JsonInclude]
+	public required string Credential { get; init; }
+
+	[JsonPropertyName("expiresAt")]
+	[JsonInclude]
+	public required string ExpiresAt { get; init; }
+
+	[JsonPropertyName("slug")]
+	[JsonInclude]
+	public required string Slug { get; init; }
 }

@@ -211,7 +211,7 @@
                                                     Grid.Column="8"
                                                     Grid.Row="0"
                                                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                                                    Visibility="{Binding SendDelVisibility.Value, Mode=OneWay}"
+                                                    IsEnabled="{Binding DataContext.IsAuthorized.Value, Mode=OneWay, ElementName=_this}"
                                                     Content="del"
                                                     >
                                                     <i:Interaction.Triggers>
@@ -228,7 +228,7 @@
                                                     material:ButtonProgressAssist.Value="{Binding DeleteProgress.Value, Mode=OneWay}"
                                                 
                                                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                                                    Visibility="{Binding DeleteResVisibility.Value, Mode=OneWay}"
+                                                    IsEnabled="{Binding DataContext.IsAuthorized.Value, Mode=OneWay, ElementName=_this}"
                                                     Content="削除"
                                                     >
                                                     <i:Interaction.Triggers>

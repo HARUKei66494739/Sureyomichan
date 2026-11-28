@@ -116,6 +116,7 @@ static class ModelsExtensions {
 					_ => ""
 				},
 				SureyomiTerms = new(source.Token),
+				SureyomiBoardId = source.Interaction.BoardId.ToString(),
 
 				FileSource = @string(source.Images.FirstOrDefault()?.ImageSource),
 				FileThumb = @string(source.Images.FirstOrDefault()?.ThumbnailSource),
@@ -284,5 +285,9 @@ static class ModelsExtensions {
 			ImageFileBytes = default,
 			Hash = default,
 		};
+	}
+
+	extension(Models.ConfigCredentialObj source) {
+		public DateTime ExpiresAtTime => NijiuraChanTime2Local(source.ExpiresAt);
 	}
 }

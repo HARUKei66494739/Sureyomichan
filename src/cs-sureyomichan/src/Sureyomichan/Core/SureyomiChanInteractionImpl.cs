@@ -11,13 +11,11 @@ namespace Haru.Kei.SureyomiChan.Core;
 
 class FutabaInteraction(string url, Models.__FutabaResData source, Helpers.FutabaApi api, IConfigProxy config) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.FutabaImg;
-	public bool IsSupportSendDel => true;
-	public bool IsSupportDeleteRes => true;
 
-	public async Task<bool> DeleteResAction()
+	public async Task<bool> DeleteResAction(Models.ConfigCredential credential)
 		=> await Utils.Util.AwaitObserver(api.PostDeleteSerial(source.ResNoInt, config.Get().FutabaPasswd), false);
 
-	public async Task<bool> SendDelAction()
+	public async Task<bool> SendDelAction(Models.ConfigCredential credential)
 		=> await Utils.Util.AwaitObserver(api.PostDelSerial(url, source.ResNoInt), false);
 
 	public async Task<IEnumerable<Models.AttachmentObject>> DownloadImages() {
@@ -50,16 +48,14 @@ class FutabaInteraction(string url, Models.__FutabaResData source, Helpers.Futab
 	}
 }
 
-class NijiuraChanInteraction(Models.NijiuraChanPost source) : Models.ISureyomiChanInteraction {
+class NijiuraChanInteraction(Models.NijiuraChanPost source, Helpers.NijiuraChanApi api, IConfigProxy config) : Models.ISureyomiChanInteraction {
 	public SureyomiChanBoardId BoardId => SureyomiChanBoardId.NijiuraChanAimg;
-	public bool IsSupportSendDel => false;
-	public bool IsSupportDeleteRes => false;
 
-	public async Task<bool> DeleteResAction()
-		=> await Task.FromResult(false);
+	public async Task<bool> DeleteResAction(Models.ConfigCredential credential)
+		=> await api.DeleteRes(source.Id, config.Get().NijiuraChanPasswd, credential.Njiurachan?.Credential ?? "");
 
-	public async Task<bool> SendDelAction()
-		=> await Task.FromResult(false);
+	public async Task<bool> SendDelAction(Models.ConfigCredential credential)
+		=> await api.SendDel(source.Id, config.Get().NijiuraChanPasswd, credential.Njiurachan?.Credential ?? "");
 
 	public async Task<IEnumerable<Models.AttachmentObject>> DownloadImages() {
 		static async Task<Models.AttachmentObject> download(NijiuraChanAttachment attachment) {

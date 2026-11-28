@@ -54,6 +54,7 @@ public partial class App : PrismApplication {
 		ViewModelLocationProvider.Register<Views.YomiageDialog, ViewModels.YomiageDialogViewModel>();
 		containerRegistry.RegisterDialogWindow<Views.YomiageDialogWindow>(nameof(Views.YomiageDialogWindow));
 		containerRegistry.RegisterDialog<Views.YomiageDialog>(typeof(Views.YomiageDialog).FullName);
+		containerRegistry.RegisterInstance<Models.Prism.ICredentialStore>(new Models.Prism.CredentialStore());
 		containerRegistry.RegisterInstance(this.Container);
 	}
 }

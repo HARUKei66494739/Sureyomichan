@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Windows;
 
 namespace Haru.Kei.SureyomiChan.Models.Bindables;
@@ -77,6 +78,15 @@ class BindableConfig : System.ComponentModel.INotifyPropertyChanged {
 		Config.DefaultConfig.YomiagePoll.Text);
 
 
+	// 20261114
+	public string NijiurachanUUID { get; }
+	public int NijiurachanAuthPort { get; }
+	public string FormatFutabaThreadTxt { get; }
+	public string FormatFutabaBouyomi { get; }
+	public string FormatNijiurachanThreadTxt { get; }
+	public string FormatNijiurachanBouyomi { get; }
+
+
 	public BindableConfig(Config config) {
 		static IEnumerable<BindableSoundDevice> getSoundDevices() {
 			using var @enum = new NAudio.CoreAudioApi.MMDeviceEnumerator();
@@ -130,6 +140,14 @@ class BindableConfig : System.ComponentModel.INotifyPropertyChanged {
 
 		// 20260926
 		this.YomiagePoll.Update(config.YomiagePoll);
+
+		// 20261114
+		this.NijiurachanUUID = config.NijiurachanUUID;
+		this.NijiurachanAuthPort = config.NijiurachanAuthPort;
+		this.FormatFutabaThreadTxt = config.FormatFutabaThreadTxt;
+		this.FormatFutabaBouyomi = config.FormatFutabaBouyomi;
+		this.FormatNijiurachanThreadTxt = config.FormatNijiurachanThreadTxt;
+		this.FormatNijiurachanBouyomi = config.FormatNijiurachanBouyomi;
 	}
 
 	private void OnDownloadFolderSelected(FolderSelectionMessage m) {
@@ -189,6 +207,14 @@ class BindableConfig : System.ComponentModel.INotifyPropertyChanged {
 
 			// 20260130
 			YomiagePoll = this.YomiagePoll.ToConfig(),
+
+			// 20261114
+			NijiurachanUUID = this.NijiurachanUUID,
+			NijiurachanAuthPort = this.NijiurachanAuthPort,
+			FormatFutabaThreadTxt = this.FormatFutabaThreadTxt,
+			FormatFutabaBouyomi = this.FormatFutabaBouyomi,
+			FormatNijiurachanThreadTxt = this.FormatNijiurachanThreadTxt,
+			FormatNijiurachanBouyomi = this.FormatNijiurachanBouyomi,
 		};
 		try {
 			File.WriteAllText(SureyomiChanEnviroment.GetStaticString(SureyomiChanStaticItem.ConfigFile), config.ToString());

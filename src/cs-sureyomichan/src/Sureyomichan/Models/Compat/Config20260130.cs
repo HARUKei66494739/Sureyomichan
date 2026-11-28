@@ -133,7 +133,15 @@ class Config20260130 : ConfigObject, IMigration<Config> {
 		IsEnabledAutoDleteIdRes = this.IsEnabledAutoDleteIdRes,
 		UsedSoundDevice = this.UsedSoundDevice,
 
-		// 20260130
+		// 20260926
 		YomiagePoll = Config.DefaultConfig.YomiagePoll,
+
+		// 20261114
+		NijiurachanUUID = Config.DefaultConfig.NijiurachanUUID,
+		NijiurachanAuthPort = Config.DefaultConfig.NijiurachanAuthPort,
+		FormatFutabaThreadTxt = Config.DefaultConfig.FormatFutabaThreadTxt,
+		FormatFutabaBouyomi = Config.DefaultConfig.FormatFutabaBouyomi,
+		FormatNijiurachanThreadTxt = Config.DefaultConfig.FormatNijiurachanThreadTxt,
+		FormatNijiurachanBouyomi = Config.DefaultConfig.FormatNijiurachanBouyomi,
 	};
 }

@@ -732,21 +732,65 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="68" />
                                         <RowDefinition MinHeight="56" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition MinHeight="56" />
                                         <RowDefinition MinHeight="56" />
                                     </Grid.RowDefinitions>
 
+
                                     <TextBlock
                                         Grid.Column="0"
+                                        Grid.Row="0"
                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
                                         VerticalAlignment="Center"
-                                        Text="削除パスワード"
+                                        Text="API認証"
+                                        TextWrapping="Wrap"
+                                        />
+                                    <StackPanel
+                                        Grid.Column="1"
+                                        Grid.Row="0"
+                                        Orientation="Vertical"
+                                        >
+                                        <Button
+                                            Style="{StaticResource MaterialDesignRaisedButton}"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            >
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                        <material:PackIcon Kind="Lock" />
+                                                    </Viewbox>
+                                                    <TextBlock Text="認証" />
+                                                </StackPanel>
+                                            </Button.Content>
+
+                                            <i:Interaction.Triggers>
+                                                <i:EventTrigger EventName="Click">
+                                                    <ri:EventToReactiveCommand Command="{Binding DataContext.AuthNijiurachanCommand, Mode=OneWay, ElementName=_this}" />
+                                                </i:EventTrigger>
+                                            </i:Interaction.Triggers>
+                                        </Button>
+
+                                        <TextBlock
+                                            Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                            HorizontalAlignment="Right"
+                                            Text="{Binding DataContext.NijiurachanAuth.Value, Mode=OneWay, ElementName=_this}"
+                                            />
+                                    </StackPanel>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Grid.Row="1"
+                                        Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                        VerticalAlignment="Center"
+                                        Text="パスワード"
                                         TextWrapping="Wrap"
                                         />
                                     <TextBox
                                         Grid.Column="1"
+                                        Grid.Row="1"
                                         VerticalAlignment="Top"
                                         material:HintAssist.Hint="aimgパスワード"
                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
@@ -756,12 +800,12 @@
 
                                     <Separator
                                         Grid.Column="0" Grid.ColumnSpan="2"
-                                        Grid.Row="1"
+                                        Grid.Row="2"
                                         Margin="16,8,16,8"
                                         Style="{StaticResource MaterialDesignDarkSeparator}" />
                                     <TextBlock
                                         Grid.Column="0"
-                                        Grid.Row="2"
+                                        Grid.Row="3"
                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
                                         VerticalAlignment="Top"
                                         Text="そうだね通知"
@@ -769,14 +813,14 @@
                                         />
                                     <ContentPresenter
                                         Grid.Column="1"
-                                        Grid.Row="2"
+                                        Grid.Row="3"
                                         Content="{Binding YomiageSoudane}"
                                         ContentTemplate="{StaticResource YomiageComponentKey}"
                                         />
 
                                     <TextBlock
                                         Grid.Column="0"
-                                        Grid.Row="3"
+                                        Grid.Row="4"
                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
                                         VerticalAlignment="Top"
                                         Text="アンケート通知"
@@ -784,7 +828,7 @@
                                         />
                                     <ContentPresenter
                                         Grid.Column="1"
-                                        Grid.Row="3"
+                                        Grid.Row="4"
                                         Content="{Binding YomiagePoll}"
                                         ContentTemplate="{StaticResource YomiageComponentKey}"
                                         />
@@ -1118,10 +1162,29 @@
             </Grid>
 
             <StackPanel
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="32,16,32,16"
+                >
+                <!--
+                <Button
+                    Style="{StaticResource MaterialDesignFloatingActionSecondaryButton}"
+                    material:ElevationAssist.Elevation="Dp8"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom"
-                    Margin="32,16,32,16"
                     >
+                    <Viewbox Stretch="UniformToFill" Width="32" Height="32">
+                        <TextBlock>Ai</TextBlock>
+                    </Viewbox>
+
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ri:EventToReactiveCommand Command="{Binding AuthAimgCommand, Mode=OneWay}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+                -->
+                
                 <Button
                     Style="{StaticResource MaterialDesignFloatingActionSecondaryButton}"
                     material:ElevationAssist.Elevation="Dp8"
