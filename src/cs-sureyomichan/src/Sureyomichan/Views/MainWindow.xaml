@@ -785,7 +785,7 @@
                                         Grid.Row="1"
                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
                                         VerticalAlignment="Center"
-                                        Text="削除パスワード"
+                                        Text="パスワード"
                                         TextWrapping="Wrap"
                                         />
                                     <TextBox
