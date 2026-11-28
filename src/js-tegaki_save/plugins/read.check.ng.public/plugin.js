@@ -110,13 +110,13 @@ function checkNg(param) {
     res,
     ret) => {
 
-    if(res.__sureyomi_board_id || res.__sureyomi_board_id != "FutabaImg") {
+    if(!res.__sureyomi_board_id || (res.__sureyomi_board_id !== "FutabaImg")) {
       return result(false, ret);
     }
-    if(param.res.fsize === 0) {
+    if(res.fsize === 0) {
       return result(false, ret);
     }
-    if(param.res.ext.toLowerCase() === ".png") {
+    if(res.ext.toLowerCase() === ".png") {
       return result(false, ret);
     }
 
