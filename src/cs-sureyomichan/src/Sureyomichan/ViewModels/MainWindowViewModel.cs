@@ -59,10 +59,7 @@ class MainWindowViewModel : BindableBase {
 
 	public ReactiveCommandSlim<RoutedEventArgs> LoadedCommand { get; } = new();
 	public ReactiveCommandSlim ClosedCommand { get; } = new();
-	public ReactiveCommandSlim<RoutedEventArgs> WebViewLoadedCommand { get; } = new();
-	// 仮置き
-	public ReactiveCommandSlim<RoutedEventArgs> __NijiurachanWebViewLoadedCommand { get; } = new();
-	
+	public ReactiveCommandSlim<RoutedEventArgs> WebViewLoadedCommand { get; } = new();	
 
 	public ReactiveCommandSlim OpenConfigCommand { get; } = new();
 	public ReactiveCommandSlim SaveConfigCommand { get; } = new();
@@ -109,11 +106,6 @@ class MainWindowViewModel : BindableBase {
 		this.LoadedCommand.Subscribe(x => this.OnLoaded(x));
 		this.ClosedCommand.Subscribe(_ => this.OnClosed());
 		this.WebViewLoadedCommand.Subscribe(x => this.OnWebViewLoaded(x));
-		this.__NijiurachanWebViewLoadedCommand.Subscribe(x => {
-			if(x.Source is WebView2 wv2) {
-				Utils.Logger.Instance.Info("WebView2(nijiurachan.net)が初期化されました");
-			}
-		});
 
 		this.OpenConfigCommand.Subscribe(_ => this.OnOpenConfig());
 		this.SaveConfigCommand.Subscribe(_ => this.OnSaveConfig());
@@ -127,7 +119,7 @@ class MainWindowViewModel : BindableBase {
 		this.BindableConfig = new(initialValue: new(this.config.Get()));
 	}
 
-	private string GetNijiurachanAuthString(ConfigCredentialObj? obj)
+	private string GetNijiurachanAuthString(Models.ConfigCredentialObj? obj)
 		=> (obj switch {
 			{ } v => (v.ExpiresAtTime - DateTime.Now) switch {
 				{ } vv when 1 < vv.TotalDays => $"あと{(int)(vv.TotalDays + 0.5)}日有効",
