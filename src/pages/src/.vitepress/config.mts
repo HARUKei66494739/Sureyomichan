@@ -35,6 +35,7 @@ export default defineConfig({
             { text: "はじめに", link: "/usage/" },
             { text: "インストール・アンインストール手順", link: "/usage/install" },
             { text: "Chrome拡張", link: "/usage/chrome-extensions" },
+            { text: "aimg API認証について", link: "/usage/aimg-auth" },
             { text: "設定画面説明", link: "/usage/settings" }, 
             { text: "使い方", link: "/usage/usage" }, 
             { text: "よくある質問", link: "/usage/faq" },
